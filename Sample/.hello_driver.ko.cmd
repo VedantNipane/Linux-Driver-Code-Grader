@@ -1,0 +1,1 @@
+savedcmd_/workspaces/Linux-Driver-Code-Grader/Sample/hello_driver.ko := ld -r -m elf_x86_64 -z noexecstack --no-warn-rwx-segments --build-id=sha1  -T scripts/module.lds -o /workspaces/Linux-Driver-Code-Grader/Sample/hello_driver.ko /workspaces/Linux-Driver-Code-Grader/Sample/hello_driver.o /workspaces/Linux-Driver-Code-Grader/Sample/hello_driver.mod.o
