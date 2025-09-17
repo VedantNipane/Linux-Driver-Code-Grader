@@ -1,9 +1,9 @@
 from compile_checker import run_compilation
 from parser import analyze_code_structure
 from style_checker import run_style_check
-# from security_checker import run_security_check
-# from scoring import calculate_score
-# from reporter import generate_report
+from security_checker import run_security_check
+from scoring import calculate_score
+from reporter import generate_report
 
 import sys
 
