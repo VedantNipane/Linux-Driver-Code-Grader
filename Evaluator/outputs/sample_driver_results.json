@@ -31,10 +31,23 @@
         }
     },
     "security": {
-        "unsafe_functions": [
-            "strcpy"
+        "issues": [
+            "unsafe_function:strcpy"
         ],
-        "score": 0.8
+        "sub_scores": {
+            "memory_safety": 0.7,
+            "resource_mgmt": 1.0,
+            "race_conditions": 1.0,
+            "input_validation": 1.0
+        },
+        "score": 0.925
     },
-    "overall_score": 82.67
+    "overall_score": 85.79,
+    "breakdown": {
+        "Correctness": 40.0,
+        "Security": 23.125,
+        "Code Quality": 17.666666666666664,
+        "Performance": 5,
+        "Advanced": 0
+    }
 }

@@ -1,24 +1,31 @@
 def calculate_score(results):
-    score = 0
+    breakdown = {}
 
-    # Correctness (40%) - includes compilation + parser structure
+    # Correctness (40%)
+    correctness = 0
     if results["compilation"]["success"]:
-        score += 30  # compilation contributes majority
-    # Structural checks (module_init/exit, function count)
-    score += results["structure"]["score"] * 10  # up to 10 points
+        correctness += 30
+    correctness += results["structure"]["score"] * 10
+    breakdown["Correctness"] = correctness
 
     # Security (25%)
-    score += results["security"]["score"] * 25
+    security = results["security"]["score"] * 25
+    breakdown["Security"] = security
 
-    # Code Quality (20%) - gentler style scaling
-    style_score = results["style"]["score"]
-    # If violations > 0, style_score is scaled softer
-    score += style_score * 20
+    # Code Quality (20%)
+    quality = results["style"]["score"] * 20
+    breakdown["Code Quality"] = quality
 
     # Performance (10%) - placeholder
-    score += 5
+    performance = 5
+    breakdown["Performance"] = performance
 
     # Advanced (5%) - placeholder
-    score += 0
+    advanced = 0
+    breakdown["Advanced"] = advanced
 
-    return round(score, 2)
+    # Final
+    final_score = round(sum(breakdown.values()), 2)
+
+    return final_score, breakdown
+

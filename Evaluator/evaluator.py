@@ -4,9 +4,9 @@ from style_checker import run_style_check
 from security_checker import run_security_check
 from scoring import calculate_score
 from reporter import generate_report
+from logger import log_score   # ✅ import logger
 
 import sys
-
 def main(file_path):
     results = {}
 
@@ -23,10 +23,16 @@ def main(file_path):
     results["security"] = run_security_check(file_path)
 
     # 5. Scoring
-    results["overall_score"] = calculate_score(results)
+    final_score, breakdown = calculate_score(results)
+    results["overall_score"] = final_score
+    results["breakdown"] = breakdown   # ✅ attach breakdown
 
     # 6. Reporting
     generate_report(results, file_path)
+
+    # 7. Logging
+    log_score(file_path, breakdown, final_score)
+
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:

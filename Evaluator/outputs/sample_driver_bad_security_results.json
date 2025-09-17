@@ -3,7 +3,7 @@
         "success": true,
         "errors": 1,
         "warnings": 0,
-        "output": "Tests/good_driver.c:4:10: fatal error: linux/uaccess.h: No such file or directory\n    4 | #include <linux/uaccess.h>\n      |          ^~~~~~~~~~~~~~~~~\ncompilation terminated.\n",
+        "output": "Tests/sample_driver_bad_security.c:4:10: fatal error: linux/uaccess.h: No such file or directory\n    4 | #include <linux/uaccess.h>\n      |          ^~~~~~~~~~~~~~~~~\ncompilation terminated.\n",
         "note": "Soft pass: missing kernel headers only"
     },
     "structure": {
@@ -18,33 +18,37 @@
             "metadata": 1.0,
             "core_functions": 1.0,
             "device_operations": 1.0,
-            "error_handling": 0.5
+            "error_handling": 0.0
         },
-        "score": 0.8833333333333333,
+        "score": 0.8333333333333333,
         "function_count": 0,
         "details": {
             "includes_found": 2,
             "metadata_found": 3.0,
             "core_functions_found": 2.0,
             "device_ops_found": 4,
-            "error_handling_indicators": 2.0
+            "error_handling_indicators": 0.0
         }
     },
     "security": {
-        "issues": [],
+        "issues": [
+            "unsafe_function:strcpy",
+            "possible_memory_leak",
+            "mutex_not_unlocked"
+        ],
         "sub_scores": {
-            "memory_safety": 1.0,
-            "resource_mgmt": 1.0,
-            "race_conditions": 1.0,
+            "memory_safety": 0.7,
+            "resource_mgmt": 0.7,
+            "race_conditions": 0.6,
             "input_validation": 1.0
         },
-        "score": 1.0
+        "score": 0.75
     },
-    "overall_score": 87.67,
+    "overall_score": 80.42,
     "breakdown": {
         "Correctness": 40.0,
-        "Security": 25.0,
-        "Code Quality": 17.666666666666664,
+        "Security": 18.75,
+        "Code Quality": 16.666666666666664,
         "Performance": 5,
         "Advanced": 0
     }

@@ -3,7 +3,7 @@
         "success": true,
         "errors": 1,
         "warnings": 0,
-        "output": "Tests/good_driver.c:4:10: fatal error: linux/uaccess.h: No such file or directory\n    4 | #include <linux/uaccess.h>\n      |          ^~~~~~~~~~~~~~~~~\ncompilation terminated.\n",
+        "output": "Tests/sample_driver_strong.c:4:10: fatal error: linux/uaccess.h: No such file or directory\n    4 | #include <linux/uaccess.h>\n      |          ^~~~~~~~~~~~~~~~~\ncompilation terminated.\n",
         "note": "Soft pass: missing kernel headers only"
     },
     "structure": {
