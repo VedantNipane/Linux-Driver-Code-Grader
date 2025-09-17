@@ -33,7 +33,7 @@ def generate_report(results, file_path):
     print(f"Advanced: 0/5 (placeholder)")
 
     print("\n--- Issues ---")
-    print(f"Style Violations: {results['style']['violations']}")
+    # print(f"Style Violations: {results['style']['violations']}")
     print(f"Security Issues: {results['security']['unsafe_functions']}")
 
     print(f"\nOverall Score: {results['overall_score']}/100")
