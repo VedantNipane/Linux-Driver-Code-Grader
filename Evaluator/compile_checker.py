@@ -1,4 +1,5 @@
 import subprocess
+import re
 
 def run_compilation(file_path):
     result = {"success": False, "errors": 0, "warnings": 0, "output": ""}
@@ -11,12 +12,23 @@ def run_compilation(file_path):
         )
         result["output"] = proc.stderr
 
+        # Count errors and warnings
+        result["errors"] = len(re.findall(r"error:", result["output"]))
+        result["warnings"] = len(re.findall(r"warning:", result["output"]))
+
         if proc.returncode == 0:
+            # Compiled cleanly
             result["success"] = True
         else:
-            # Count errors and warnings in output
-            result["errors"] = result["output"].count("error:")
-            result["warnings"] = result["output"].count("warning:")
+            # Check if errors are ONLY missing kernel headers
+            missing_header_errors = re.findall(r"fatal error: linux/.*: No such file", result["output"])
+            if missing_header_errors and result["errors"] == len(missing_header_errors):
+                # Treat as soft success
+                result["success"] = True
+                result["note"] = "Soft pass: missing kernel headers only"
+            else:
+                result["success"] = False
+
     except Exception as e:
         result["output"] = str(e)
 

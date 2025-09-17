@@ -11,7 +11,15 @@ def run_security_check(file_path):
         if func in code:
             metrics["unsafe_functions"].append(func)
 
+    # kernel-specific risky usage
+    if "copy_to_user" in code and not re.search(r"copy_to_user\s*\([^,]+,[^,]+,.*len", code):
+        metrics["unsafe_functions"].append("copy_to_user_unchecked")
+
+    if "copy_from_user" in code and not re.search(r"copy_from_user\s*\([^,]+,[^,]+,.*len", code):
+        metrics["unsafe_functions"].append("copy_from_user_unchecked")
+
     # Deduct score for each unsafe function
-    metrics["score"] = max(0, 1 - (0.3 * len(metrics["unsafe_functions"])))
+    penalty = 0.2*len(metrics["unsafe_functions"])
+    metrics["score"] = max(0, 1 - penalty)
 
     return metrics

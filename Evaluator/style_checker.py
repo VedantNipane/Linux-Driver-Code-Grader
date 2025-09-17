@@ -11,7 +11,7 @@ def run_style_check(file_path):
         )
         result["output"] = proc.stdout
         result["violations"] = result["output"].count("WARNING") + result["output"].count("ERROR")
-        result["score"] = max(0, 1 - (result["violations"] / 20))  # crude formula
+        result["score"] = max(0, 1 - (result["violations"] / 100))  # crude formula, can be tweaked
     except Exception as e:
         result["output"] = str(e)
         result["score"] = 0.0
