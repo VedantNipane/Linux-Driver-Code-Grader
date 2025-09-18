@@ -1,0 +1,51 @@
+{
+    "compilation": {
+        "success": true,
+        "errors": 1,
+        "warnings": 0,
+        "output": "Tests/4_gpt.c:21:10: fatal error: linux/etherdevice.h: No such file or directory\n   21 | #include <linux/etherdevice.h>\n      |          ^~~~~~~~~~~~~~~~~~~~~\ncompilation terminated.\n",
+        "note": "Soft pass: missing kernel headers only"
+    },
+    "structure": {
+        "module_init": true,
+        "module_exit": true,
+        "function_count": 7,
+        "score": 1.0
+    },
+    "style": {
+        "checks": {
+            "includes": 1.0,
+            "metadata": 1.0,
+            "core_functions": 1.0,
+            "device_operations": 0.0,
+            "error_handling": 0.5
+        },
+        "score": 0.75,
+        "function_count": 0,
+        "details": {
+            "includes_found": 3,
+            "metadata_found": 3.0,
+            "core_functions_found": 2.0,
+            "device_ops_found": 0,
+            "error_handling_indicators": 2.0
+        }
+    },
+    "security": {
+        "issues": [],
+        "sub_scores": {
+            "memory_safety": 1.0,
+            "resource_mgmt": 1.0,
+            "race_conditions": 1.0,
+            "input_validation": 1.0
+        },
+        "score": 1.0
+    },
+    "overall_score": 85.0,
+    "breakdown": {
+        "Correctness": 40.0,
+        "Security": 25.0,
+        "Code Quality": 15.0,
+        "Performance": 5,
+        "Advanced": 0
+    }
+}

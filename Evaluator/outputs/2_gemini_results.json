@@ -1,0 +1,53 @@
+{
+    "compilation": {
+        "success": true,
+        "errors": 1,
+        "warnings": 0,
+        "output": "Tests/2_gemini.c:1:10: fatal error: linux/init.h: No such file or directory\n    1 | #include <linux/init.h>\n      |          ^~~~~~~~~~~~~~\ncompilation terminated.\n",
+        "note": "Soft pass: missing kernel headers only"
+    },
+    "structure": {
+        "module_init": true,
+        "module_exit": true,
+        "function_count": 9,
+        "score": 1.0
+    },
+    "style": {
+        "checks": {
+            "includes": 1.0,
+            "metadata": 1.0,
+            "core_functions": 1.0,
+            "device_operations": 1.0,
+            "error_handling": 0.5
+        },
+        "score": 0.95,
+        "function_count": 0,
+        "details": {
+            "includes_found": 3,
+            "metadata_found": 3.0,
+            "core_functions_found": 2.0,
+            "device_ops_found": 4,
+            "error_handling_indicators": 2.0
+        }
+    },
+    "security": {
+        "issues": [
+            "copy_to_user_unchecked"
+        ],
+        "sub_scores": {
+            "memory_safety": 1.0,
+            "resource_mgmt": 1.0,
+            "race_conditions": 1.0,
+            "input_validation": 0.7
+        },
+        "score": 0.925
+    },
+    "overall_score": 87.12,
+    "breakdown": {
+        "Correctness": 40.0,
+        "Security": 23.125,
+        "Code Quality": 19.0,
+        "Performance": 5,
+        "Advanced": 0
+    }
+}

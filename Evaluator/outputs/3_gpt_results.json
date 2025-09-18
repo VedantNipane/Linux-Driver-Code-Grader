@@ -1,0 +1,53 @@
+{
+    "compilation": {
+        "success": true,
+        "errors": 1,
+        "warnings": 0,
+        "output": "Tests/3_gpt.c:15:10: fatal error: linux/blkdev.h: No such file or directory\n   15 | #include <linux/blkdev.h>\n      |          ^~~~~~~~~~~~~~~~\ncompilation terminated.\n",
+        "note": "Soft pass: missing kernel headers only"
+    },
+    "structure": {
+        "module_init": true,
+        "module_exit": true,
+        "function_count": 6,
+        "score": 1.0
+    },
+    "style": {
+        "checks": {
+            "includes": 0.6666666666666666,
+            "metadata": 1.0,
+            "core_functions": 1.0,
+            "device_operations": 1.0,
+            "error_handling": 0.75
+        },
+        "score": 0.9083333333333333,
+        "function_count": 0,
+        "details": {
+            "includes_found": 2,
+            "metadata_found": 3.0,
+            "core_functions_found": 2.0,
+            "device_ops_found": 2,
+            "error_handling_indicators": 3.0
+        }
+    },
+    "security": {
+        "issues": [
+            "spinlock_not_unlocked"
+        ],
+        "sub_scores": {
+            "memory_safety": 1.0,
+            "resource_mgmt": 1.0,
+            "race_conditions": 0.6,
+            "input_validation": 1.0
+        },
+        "score": 0.9
+    },
+    "overall_score": 85.67,
+    "breakdown": {
+        "Correctness": 40.0,
+        "Security": 22.5,
+        "Code Quality": 18.166666666666668,
+        "Performance": 5,
+        "Advanced": 0
+    }
+}

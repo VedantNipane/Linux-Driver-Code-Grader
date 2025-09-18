@@ -1,0 +1,17 @@
+1. "Create a simple Linux character device driver that supports basic read/write operations with a 1KB internal buffer. Include proper module initialization and cleanup."
+2. "Create a platform device driver for a memory-mapped GPIO controller with:
+- Platform driver registration
+- Memory mapping using ioremap
+- Interrupt handling
+- Device tree compatibility"
+3. "Implement a simple block device driver with:
+- Block device registration
+- Request queue handling
+- Basic read/write block operations
+- 1MB virtual disk size"
+4. "Create a virtual network device driver with:
+- Network device registration
+- Packet transmission and reception
+- Network statistics
+- Ethernet frame handling"
+5. 

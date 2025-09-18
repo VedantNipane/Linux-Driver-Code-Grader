@@ -32,14 +32,14 @@ def generate_report(results, file_path):
     print(f"Performance: 5/10 (placeholder)")
     print(f"Advanced: 0/5 (placeholder)")
 
-    print("\n--- Issues ---")
-    # print(f"Style Violations: {results['style']['violations']}")
-    # print(f"Security Issues: {results['security']['unsafe_functions']}")
+    # print("\n--- Issues ---")
+    # # print(f"Style Violations: {results['style']['violations']}")
+    # # print(f"Security Issues: {results['security']['unsafe_functions']}")
 
-    print("\n--- Security Breakdown ---")
-    for category, subscore in results["security"]["sub_scores"].items():
-        print(f"{category.replace('_', ' ').title()}: {subscore:.2f}")
-    print(f"Issues Found: {results['security']['issues']}")
+    # print("\n--- Security Breakdown ---")
+    # for category, subscore in results["security"]["sub_scores"].items():
+    #     print(f"{category.replace('_', ' ').title()}: {subscore:.2f}")
+    # print(f"Issues Found: {results['security']['issues']}")
     
     print(f"\nOverall Score: {results['overall_score']}/100")
     print(f"Report saved to: {report_path}")
