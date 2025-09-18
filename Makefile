@@ -1,4 +1,4 @@
-PYTHON = python
+PYTHON = python3
 EVALUATOR = evaluator.py
 TEST_DIR = Tests
 TESTS = $(wildcard $(TEST_DIR)/*)
