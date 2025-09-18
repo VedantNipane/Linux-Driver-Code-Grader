@@ -1,34 +1,32 @@
 {
     "compilation": {
         "success": true,
+        "method": "gcc",
+        "output": "Tests/sample_driver.c:4:10: fatal error: linux/uaccess.h: No such file or directory\n    4 | #include <linux/uaccess.h>\n      |          ^~~~~~~~~~~~~~~~~\ncompilation terminated.\n",
         "errors": 1,
         "warnings": 0,
-        "output": "Tests/sample_driver.c:4:10: fatal error: linux/uaccess.h: No such file or directory\n    4 | #include <linux/uaccess.h>\n      |          ^~~~~~~~~~~~~~~~~\ncompilation terminated.\n",
         "note": "Soft pass: missing kernel headers only"
     },
     "structure": {
         "module_init": true,
         "module_exit": true,
         "function_count": 6,
-        "score": 1.0
+        "avg_func_len": 1.0,
+        "driver_type": "char",
+        "functionality_score": 1.0,
+        "fops_present": [
+            "write",
+            "open",
+            "release",
+            "read"
+        ]
     },
     "style": {
-        "checks": {
-            "includes": 0.6666666666666666,
-            "metadata": 1.0,
-            "core_functions": 1.0,
-            "device_operations": 1.0,
-            "error_handling": 0.5
-        },
-        "score": 0.8833333333333333,
-        "function_count": 0,
-        "details": {
-            "includes_found": 2,
-            "metadata_found": 3.0,
-            "core_functions_found": 2.0,
-            "device_ops_found": 4,
-            "error_handling_indicators": 2.0
-        }
+        "violations": 47,
+        "style_score": 0.53,
+        "documentation_score": 0.5,
+        "maintainability_score": 0.998,
+        "output": "WARNING: Missing or malformed SPDX-License-Identifier tag in line 1\n#1: FILE: Tests/sample_driver.c:1:\n+#include <linux/module.h>\n\nWARNING: please, no spaces at the start of a line\n#16: FILE: Tests/sample_driver.c:16:\n+    printk(KERN_INFO \"Device opened\\n\");$\n\nWARNING: Prefer [subsystem eg: netdev]_info([subsystem]dev, ... then dev_info(dev, ... then pr_info(...  to printk(KERN_INFO ...\n#16: FILE: Tests/sample_driver.c:16:\n+    printk(KERN_INFO \"Device opened\\n\");\n\nWARNING: please, no spaces at the start of a line\n#17: FILE: Tests/sample_driver.c:17:\n+    return 0;$\n\nWARNING: please, no spaces at the start of a line\n#22: FILE: Tests/sample_driver.c:22:\n+    int bytes_read = 0;$\n\nERROR: trailing whitespace\n#24: FILE: Tests/sample_driver.c:24:\n+    strcpy(buffer, msg);  $\n\nWARNING: please, no spaces at the start of a line\n#24: FILE: Tests/sample_driver.c:24:\n+    strcpy(buffer, msg);  $\n\nWARNING: Prefer strscpy over strcpy - see: https://github.com/KSPP/linux/issues/88\n#24: FILE: Tests/sample_driver.c:24:\n+    strcpy(buffer, msg);  \n\nWARNING: please, no spaces at the start of a line\n#25: FILE: Tests/sample_driver.c:25:\n+    bytes_read = strlen(msg);$\n\nWARNING: please, no spaces at the start of a line\n#26: FILE: Tests/sample_driver.c:26:\n+    return bytes_read;$\n\nWARNING: please, no spaces at the start of a line\n#31: FILE: Tests/sample_driver.c:31:\n+    if (len > BUF_LEN) {$\n\nERROR: code indent should use tabs where possible\n#32: FILE: Tests/sample_driver.c:32:\n+        printk(KERN_ALERT \"Write too long!\\n\");$\n\nWARNING: please, no spaces at the start of a line\n#32: FILE: Tests/sample_driver.c:32:\n+        printk(KERN_ALERT \"Write too long!\\n\");$\n\nWARNING: Prefer [subsystem eg: netdev]_alert([subsystem]dev, ... then dev_alert(dev, ... then pr_alert(...  to printk(KERN_ALERT ...\n#32: FILE: Tests/sample_driver.c:32:\n+        printk(KERN_ALERT \"Write too long!\\n\");\n\nERROR: code indent should use tabs where possible\n#33: FILE: Tests/sample_driver.c:33:\n+        return -EINVAL;$\n\nWARNING: please, no spaces at the start of a line\n#33: FILE: Tests/sample_driver.c:33:\n+        return -EINVAL;$\n\nWARNING: please, no spaces at the start of a line\n#34: FILE: Tests/sample_driver.c:34:\n+    }$\n\nWARNING: please, no spaces at the start of a line\n#35: FILE: Tests/sample_driver.c:35:\n+    strncpy(msg, buff, len);$\n\nWARNING: Prefer strscpy, strscpy_pad, or __nonstring over strncpy - see: https://github.com/KSPP/linux/issues/90\n#35: FILE: Tests/sample_driver.c:35:\n+    strncpy(msg, buff, len);\n\nWARNING: please, no spaces at the start of a line\n#36: FILE: Tests/sample_driver.c:36:\n+    msg[len] = '\\0';$\n\nWARNING: please, no spaces at the start of a line\n#37: FILE: Tests/sample_driver.c:37:\n+    return len;$\n\nWARNING: please, no spaces at the start of a line\n#42: FILE: Tests/sample_driver.c:42:\n+    printk(KERN_INFO \"Device closed\\n\");$\n\nWARNING: Prefer [subsystem eg: netdev]_info([subsystem]dev, ... then dev_info(dev, ... then pr_info(...  to printk(KERN_INFO ...\n#42: FILE: Tests/sample_driver.c:42:\n+    printk(KERN_INFO \"Device closed\\n\");\n\nWARNING: please, no spaces at the start of a line\n#43: FILE: Tests/sample_driver.c:43:\n+    return 0;$\n\nWARNING: please, no spaces at the start of a line\n#47: FILE: Tests/sample_driver.c:47:\n+    .read = device_read,$\n\nWARNING: please, no spaces at the start of a line\n#48: FILE: Tests/sample_driver.c:48:\n+    .write = device_write,$\n\nWARNING: please, no spaces at the start of a line\n#49: FILE: Tests/sample_driver.c:49:\n+    .open = device_open,$\n\nWARNING: please, no spaces at the start of a line\n#50: FILE: Tests/sample_driver.c:50:\n+    .release = device_release$\n\nWARNING: please, no spaces at the start of a line\n#55: FILE: Tests/sample_driver.c:55:\n+    major = register_chrdev(0, DEVICE_NAME, &fops);$\n\nWARNING: please, no spaces at the start of a line\n#56: FILE: Tests/sample_driver.c:56:\n+    if (major < 0) {$\n\nERROR: code indent should use tabs where possible\n#57: FILE: Tests/sample_driver.c:57:\n+        printk(KERN_ALERT \"Registering char device failed with %d\\n\", major);$\n\nWARNING: please, no spaces at the start of a line\n#57: FILE: Tests/sample_driver.c:57:\n+        printk(KERN_ALERT \"Registering char device failed with %d\\n\", major);$\n\nWARNING: Prefer [subsystem eg: netdev]_alert([subsystem]dev, ... then dev_alert(dev, ... then pr_alert(...  to printk(KERN_ALERT ...\n#57: FILE: Tests/sample_driver.c:57:\n+        printk(KERN_ALERT \"Registering char device failed with %d\\n\", major);\n\nERROR: code indent should use tabs where possible\n#58: FILE: Tests/sample_driver.c:58:\n+        return major;$\n\nWARNING: please, no spaces at the start of a line\n#58: FILE: Tests/sample_driver.c:58:\n+        return major;$\n\nWARNING: please, no spaces at the start of a line\n#59: FILE: Tests/sample_driver.c:59:\n+    }$\n\nWARNING: please, no spaces at the start of a line\n#60: FILE: Tests/sample_driver.c:60:\n+    msg = kmalloc(BUF_LEN, GFP_KERNEL);$\n\nWARNING: please, no spaces at the start of a line\n#61: FILE: Tests/sample_driver.c:61:\n+    printk(KERN_INFO \"Sample driver loaded with major %d\\n\", major);$\n\nWARNING: Prefer [subsystem eg: netdev]_info([subsystem]dev, ... then dev_info(dev, ... then pr_info(...  to printk(KERN_INFO ...\n#61: FILE: Tests/sample_driver.c:61:\n+    printk(KERN_INFO \"Sample driver loaded with major %d\\n\", major);\n\nWARNING: please, no spaces at the start of a line\n#62: FILE: Tests/sample_driver.c:62:\n+    return 0;$\n\nWARNING: please, no spaces at the start of a line\n#67: FILE: Tests/sample_driver.c:67:\n+    unregister_chrdev(major, DEVICE_NAME);$\n\nWARNING: please, no spaces at the start of a line\n#68: FILE: Tests/sample_driver.c:68:\n+    kfree(msg);$\n\nWARNING: please, no spaces at the start of a line\n#69: FILE: Tests/sample_driver.c:69:\n+    printk(KERN_INFO \"Sample driver unloaded\\n\");$\n\nWARNING: Prefer [subsystem eg: netdev]_info([subsystem]dev, ... then dev_info(dev, ... then pr_info(...  to printk(KERN_INFO ...\n#69: FILE: Tests/sample_driver.c:69:\n+    printk(KERN_INFO \"Sample driver unloaded\\n\");\n\ntotal: 5 errors, 39 warnings, 77 lines checked\n\nNOTE: For some of the reported defects, checkpatch may be able to\n      mechanically convert to the typical style using --fix or --fix-inplace.\n\nNOTE: Whitespace errors detected.\n      You may wish to use scripts/cleanpatch or scripts/cleanfile\n\nTests/sample_driver.c has style problems, please review.\n\nNOTE: If any of the errors are false positives, please report\n      them to the maintainer, see CHECKPATCH in MAINTAINERS.\n"
     },
     "security": {
         "issues": [
@@ -42,12 +40,54 @@
         },
         "score": 0.925
     },
-    "overall_score": 85.79,
+    "meta_file": "Tests/sample_driver.c",
+    "performance": {
+        "score": 0.8,
+        "details": [
+            "large kmalloc detected -> -2.0"
+        ]
+    },
+    "overall_score": 84.35,
     "breakdown": {
-        "Correctness": 40.0,
-        "Security": 23.125,
-        "Code Quality": 17.666666666666664,
-        "Performance": 5,
-        "Advanced": 0
+        "Correctness": {
+            "awarded": 40.0,
+            "max": 40.0,
+            "details": [
+                "Compilation: success (method=gcc)",
+                "Soft pass: missing kernel headers only",
+                "Functionality score: 1.00 -> 10.00/10"
+            ]
+        },
+        "Security": {
+            "awarded": 23.12,
+            "max": 25.0,
+            "details": [
+                "sub_scores: {'memory_safety': 0.7, 'resource_mgmt': 1.0, 'race_conditions': 1.0, 'input_validation': 1.0}",
+                "issues: ['unsafe_function:strcpy']"
+            ]
+        },
+        "Code Quality": {
+            "awarded": 13.23,
+            "max": 20.0,
+            "details": [
+                {
+                    "style_score": 0.53,
+                    "documentation_score": 0.5,
+                    "maintainability_score": 0.998
+                }
+            ]
+        },
+        "Performance": {
+            "awarded": 8.0,
+            "max": 10.0,
+            "details": [
+                "large kmalloc detected -> -2.0"
+            ]
+        },
+        "Advanced": {
+            "awarded": 0.0,
+            "max": 5.0,
+            "details": []
+        }
     }
 }

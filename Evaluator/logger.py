@@ -2,33 +2,34 @@ import csv
 import os
 from datetime import datetime
 
-LOG_FILE = "score_logs.csv"
-
-def log_score(file_name, breakdown, final_score):
+def log_score(file_path, results, overall_score, breakdown):
     """
-    Append evaluation results (breakdown + total) to CSV.
+    Append evaluation results to score_logs.csv with full breakdown.
+    
+    Args:
+        file_path (str): Path to the evaluated driver file.
+        results (dict): Full results dict (compilation, style, security, structure, etc.).
+        overall_score (float): Final overall score.
+        breakdown (dict): Detailed scoring breakdown from scoring.py
+                          Format: { "Correctness": {"awarded": x, "max": y, "details": [...]}, ... }
     """
-    # Ensure CSV exists with header
-    if not os.path.exists(LOG_FILE):
-        with open(LOG_FILE, mode="w", newline="") as f:
-            writer = csv.writer(f)
-            writer.writerow([
-                "timestamp", "file",
-                "Correctness", "Security", "Code Quality",
-                "Performance", "Advanced",
-                "Final Score"
-            ])
 
-    # Append new row
-    with open(LOG_FILE, mode="a", newline="") as f:
-        writer = csv.writer(f)
-        writer.writerow([
-            datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            file_name,
-            f"{breakdown['Correctness']:.1f}/40",
-            f"{breakdown['Security']:.1f}/25",
-            f"{breakdown['Code Quality']:.1f}/20",
-            f"{breakdown['Performance']:.1f}/10",
-            f"{breakdown['Advanced']:.1f}/5",
-            f"{final_score:.1f}/100"
-        ])
+    log_file = "score_logs.csv"
+    file_exists = os.path.isfile(log_file)
+
+    row = {
+        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "file": os.path.basename(file_path),
+        "overall_score": f"{overall_score:.1f}/100"
+    }
+
+    for category, data in breakdown.items():
+        awarded = data.get("awarded", 0.0)
+        max_pts = data.get("max", 0.0)
+        row[category] = f"{awarded:.1f}/{max_pts:.0f}"
+
+    with open(log_file, "a", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=row.keys())
+        if not file_exists:
+            writer.writeheader()
+        writer.writerow(row)

@@ -1,80 +1,116 @@
+# style_checker.py
 import subprocess
 import re
-# def run_style_check(file_path):
-    # result = {"violations": 0, "score": 1.0, "output": ""}
+import os
 
-    # try:
-    #     proc = subprocess.run(
-    #         ["perl", "checkpatch.pl", "--no-tree", "--file", file_path],
-    #         capture_output=True,
-    #         text=True
-    #     )
-    #     result["output"] = proc.stdout
-    #     result["violations"] = result["output"].count("WARNING") + result["output"].count("ERROR")
-    #     result["score"] = max(0, 1 - (result["violations"] / 100))  # crude formula, can be tweaked
-    # except Exception as e:
-    #     result["output"] = str(e)
-    #     result["score"] = 0.0
+CHECKPATCH = "./checkpatch.pl"  # prefer local copy in repo root
 
-    # return result
+def _run_checkpatch(file_path):
+    """Run checkpatch.pl if available and return raw output."""
+    if os.path.exists(CHECKPATCH):
+        try:
+            proc = subprocess.run(
+                ["perl", CHECKPATCH, "--no-tree", "--file", file_path],
+                capture_output=True, text=True, timeout=60
+            )
+            return proc.stdout or proc.stderr or ""
+        except Exception as e:
+            return f"checkpatch exception: {e}"
+    else:
+        # fallback: simple heuristics if checkpatch not available
+        try:
+            with open(file_path, "r") as f:
+                return f.read()
+        except Exception as e:
+            return f"fallback read exception: {e}"
 
 def run_style_check(file_path):
-    """Comprehensive structure validation for Linux device drivers"""
-    with open(file_path, "r") as f:
-        code_content = f.read()
-    checks = {}
-    score_components = []
-    
-    # Essential includes (weight: 20%)
-    required_includes = [
-        'linux/module.h',
-        'linux/kernel.h', 
-        'linux/init.h'
-    ]
-    
-    include_score = 0
-    for include in required_includes:
-        if f'#include <{include}>' in code_content:
-            include_score += 1
-    checks['includes'] = include_score / len(required_includes)
-    score_components.append(('includes', 0.2))
-    
-    # Module metadata (weight: 15%)
-    metadata_items = ['MODULE_LICENSE', 'MODULE_AUTHOR', 'MODULE_DESCRIPTION']
-    metadata_score = sum(1 for item in metadata_items if item in code_content) / len(metadata_items)
-    checks['metadata'] = metadata_score
-    score_components.append(('metadata', 0.15))
-    
-    # Core driver functions (weight: 35%)
-    core_functions = ['module_init', 'module_exit']
-    core_score = sum(1 for func in core_functions if func in code_content) / len(core_functions)
-    checks['core_functions'] = core_score
-    score_components.append(('core_functions', 0.35))
-    
-    # Device operations (weight: 20%) - for character devices
-    device_ops = ['open', 'release', 'read', 'write']
-    ops_found = sum(1 for op in device_ops if f'device_{op}' in code_content or f'.{op}' in code_content)
-    checks['device_operations'] = min(1.0, ops_found / 2)  # At least 2 operations expected
-    score_components.append(('device_operations', 0.2))
-    
-    # Error handling patterns (weight: 10%)
-    error_patterns = ['return -E', 'if (', 'goto err', 'cleanup']
-    error_handling = sum(1 for pattern in error_patterns if pattern in code_content) / len(error_patterns)
-    checks['error_handling'] = error_handling
-    score_components.append(('error_handling', 0.1))
-    
-    # Calculate weighted score
-    total_score = sum(checks[component] * weight for component, weight in score_components)
-    
-    return {
-        "checks": checks,
-        "score": total_score,
-        "function_count": len(re.findall(r'^\s*\w+\s+\w+\s*\([^)]*\)\s*{', code_content, re.MULTILINE)),
-        "details": {
-            "includes_found": include_score,
-            "metadata_found": metadata_score * len(metadata_items),
-            "core_functions_found": core_score * len(core_functions),
-            "device_ops_found": ops_found,
-            "error_handling_indicators": error_handling * len(error_patterns)
-        }
+    """
+    Returns dict:
+      {
+        violations: int,
+        style_score: float,        # 0..1
+        documentation_score: float,# 0..1
+        maintainability_score:float,#0..1
+        output: raw_checkpatch_output
+      }
+    """
+    result = {
+        "violations": 0,
+        "style_score": 1.0,
+        "documentation_score": 1.0,
+        "maintainability_score": 1.0,
+        "output": ""
     }
+
+    raw = _run_checkpatch(file_path)
+    result["output"] = raw
+
+    # If checkpatch output contains WARNING/ERROR, count them
+    w = len(re.findall(r"WARNING:", raw)) + len(re.findall(r"WARNING:", raw.lower()))
+    e = len(re.findall(r"ERROR:", raw)) + len(re.findall(r"ERROR:", raw.lower()))
+    # also count "WARNING" or "warning"
+    generic_w = len(re.findall(r"\bwarning:", raw)) + len(re.findall(r"\bNOTE:", raw))
+    violations = w + e + generic_w
+
+    # fallback heuristic: look for tabs, line length > 80
+    if violations == 0:
+        # Lines too long
+        try:
+            with open(file_path, "r") as fh:
+                lines = fh.readlines()
+            long_lines = sum(1 for L in lines if len(L.rstrip("\n")) > 80)
+            tab_lines = sum(1 for L in lines if "\t" in L)
+            violations += long_lines + tab_lines
+        except Exception:
+            pass
+
+    result["violations"] = violations
+
+    # style_score: gentle scaling
+    result["style_score"] = max(0.0, 1.0 - (violations / 100.0))
+
+    # Documentation heuristics:
+    # + Check for MODULE_* macros
+    doc_points = 0
+    try:
+        with open(file_path, "r") as fh:
+            code = fh.read()
+        if "MODULE_LICENSE" in code and "MODULE_AUTHOR" in code and "MODULE_DESCRIPTION" in code:
+            doc_points += 0.5
+        # count function-level comment occurrences: '/*' before a function header
+        func_comment_hits = len(re.findall(r"/\*[^*]*\*/\s*[a-zA-Z_].*\(", code, flags=re.DOTALL))
+        # crude: map hits to 0..0.5
+        doc_points += min(0.5, 0.1 * func_comment_hits)
+    except Exception:
+        pass
+    result["documentation_score"] = min(1.0, doc_points)
+
+    # Maintainability heuristics: average function length penalty
+    try:
+        func_lengths = []
+        # find approximate function bodies using braces pair heuristic
+        func_headers = re.finditer(r"^\s*[a-zA-Z_][\w\s\*]+\s+[a-zA-Z_]\w*\s*\([^)]*\)\s*\{", open(file_path).read(), re.MULTILINE)
+        code_text = open(file_path).read()
+        for h in func_headers:
+            start = h.start()
+            brace_count = 0
+            lines = code_text[start:].splitlines()
+            count = 0
+            for line in lines:
+                count += 1
+                brace_count += line.count("{")
+                brace_count -= line.count("}")
+                if brace_count <= 0:
+                    break
+            func_lengths.append(max(1, count))
+        if func_lengths:
+            avg_len = sum(func_lengths) / len(func_lengths)
+            # normalize: shorter functions -> higher score
+            result["maintainability_score"] = max(0.0, 1.0 - (avg_len / 500.0))
+        else:
+            result["maintainability_score"] = 1.0
+    except Exception:
+        result["maintainability_score"] = 1.0
+
+    return result
