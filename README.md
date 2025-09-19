@@ -145,11 +145,11 @@ Report saved to: outputs/sample_driver_results.json
 
 ## Documentation
 
-The following detailed documents are included in the `docs/` folder:
-
-* **System Architecture** – design overview and flow between modules
-* **Rubrics Explanation** – scoring criteria, weights, and rationale
-* **User Guide** – installation, usage, and analysis instructions
+The following detailed documents are included in the `docs/` folder:  
+- **System Architecture** – design overview and flow between modules  
+- **Rubrics Explanation** – scoring criteria, weights, and rationale  
+- **User Guide** – installation, usage, and analysis instructions  
+- **Evaluation Report** – detailed analysis of LLM-generated drivers across prompts, with scoring breakdowns and insights
 
 ---
 
