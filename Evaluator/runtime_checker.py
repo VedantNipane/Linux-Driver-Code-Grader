@@ -5,21 +5,13 @@ from dynamic_tests import run_dynamic_tests
 
 
 def run_runtime_checks(driver_path):
-    """
-    Attempt to build, load, and unload a kernel module.
-    Auto-generates a Makefile if missing.
-    Runs dynamic tests (smoke, concurrency, perf, sysfs, ioctl) if module loads.
-    Cleans up build artifacts afterward.
-    Returns metrics usable by evaluator + scoring.
-    """
-
     metrics = {
         "compiled": False,
         "loaded": False,
         "unloaded": False,
         "dmesg_success": False,
         "runtime_notes": "",
-        "dynamic": None
+        "dynamic": {},
     }
 
     driver_dir = os.path.dirname(os.path.abspath(driver_path))
@@ -32,7 +24,6 @@ def run_runtime_checks(driver_path):
     auto_makefile = False
 
     try:
-        # --- Step 1: Ensure Makefile exists ---
         if not os.path.exists(makefile_path):
             auto_makefile = True
             makefile_content = (
@@ -45,12 +36,12 @@ def run_runtime_checks(driver_path):
             with open(makefile_path, "w") as f:
                 f.write(makefile_content)
 
-        # --- Step 2: Build driver ---
         build_cmd = [
             "make",
-            "-C", f"/lib/modules/{kernel_release}/build",
+            "-C",
+            f"/lib/modules/{kernel_release}/build",
             f"M={driver_dir}",
-            "modules"
+            "modules",
         ]
         try:
             subprocess.run(build_cmd, check=True, capture_output=True, text=True)
@@ -64,13 +55,11 @@ def run_runtime_checks(driver_path):
 
         metrics["compiled"] = True
 
-        # --- Step 3: Try inserting module ---
         try:
             subprocess.run(["sudo", "insmod", ko_file], check=True, capture_output=True, text=True)
             metrics["loaded"] = True
         except subprocess.CalledProcessError as e:
             if "File exists" in e.stderr:
-                # Module already loaded -> remove & retry
                 try:
                     subprocess.run(["sudo", "rmmod", driver_base], check=True, capture_output=True, text=True)
                     subprocess.run(["sudo", "insmod", ko_file], check=True, capture_output=True, text=True)
@@ -86,24 +75,17 @@ def run_runtime_checks(driver_path):
             metrics["runtime_notes"] = "No permission for insmod."
             return metrics
 
-        # --- Step 4: Run dynamic tests (only if loaded) ---
-        try:
-            metrics["dynamic"] = run_dynamic_tests(driver_base)
-        except Exception as e:
-            metrics["runtime_notes"] += f" dynamic tests failed: {e}"
-
-        # --- Step 5: Check dmesg ---
         try:
             result = subprocess.run(
                 ["dmesg", "--kernel", "--ctime", "--color=never"],
-                capture_output=True, text=True
+                capture_output=True,
+                text=True,
             )
             if result.returncode == 0 and result.stdout:
                 metrics["dmesg_success"] = True
         except Exception:
             metrics["runtime_notes"] += " dmesg not accessible."
 
-        # --- Step 6: Remove module ---
         try:
             subprocess.run(["sudo", "rmmod", driver_base], check=True, capture_output=True, text=True)
             metrics["unloaded"] = True
@@ -112,14 +94,15 @@ def run_runtime_checks(driver_path):
         except PermissionError:
             metrics["runtime_notes"] += " no permission for rmmod."
 
+        # --- Run dynamic tests ---
+        dyn_results = run_dynamic_tests(driver_base)
+        metrics["dynamic"] = dyn_results
+
     finally:
-        # --- Step 7: Cleanup build artifacts ---
         try:
             subprocess.run(["make", "clean"], cwd=driver_dir, capture_output=True, text=True)
         except Exception:
             pass
-
-        # Remove auto-generated Makefile if we created one
         if auto_makefile and os.path.exists(makefile_path):
             try:
                 os.remove(makefile_path)

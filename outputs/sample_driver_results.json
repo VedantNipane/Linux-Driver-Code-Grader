@@ -2,7 +2,7 @@
     "compilation": {
         "success": true,
         "method": "kbuild",
-        "output": "make: Entering directory '/usr/src/linux-headers-6.8.0-1030-azure'\n  CC [M]  /tmp/evaluator_kbuild_jf8nexn0/sample_driver.o\n  MODPOST /tmp/evaluator_kbuild_jf8nexn0/Module.symvers\n  CC [M]  /tmp/evaluator_kbuild_jf8nexn0/sample_driver.mod.o\n  LD [M]  /tmp/evaluator_kbuild_jf8nexn0/sample_driver.ko\n  BTF [M] /tmp/evaluator_kbuild_jf8nexn0/sample_driver.ko\nmake: Leaving directory '/usr/src/linux-headers-6.8.0-1030-azure'\nwarning: the compiler differs from the one used to build the kernel\n  The kernel was built by: x86_64-linux-gnu-gcc-13 (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0\n  You are using:           gcc-13 (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0\nSkipping BTF generation for /tmp/evaluator_kbuild_jf8nexn0/sample_driver.ko due to unavailability of vmlinux\n",
+        "output": "make: Entering directory '/usr/src/linux-headers-6.8.0-1030-azure'\n  CC [M]  /tmp/evaluator_kbuild_abdoo9b2/sample_driver.o\n  MODPOST /tmp/evaluator_kbuild_abdoo9b2/Module.symvers\n  CC [M]  /tmp/evaluator_kbuild_abdoo9b2/sample_driver.mod.o\n  LD [M]  /tmp/evaluator_kbuild_abdoo9b2/sample_driver.ko\n  BTF [M] /tmp/evaluator_kbuild_abdoo9b2/sample_driver.ko\nmake: Leaving directory '/usr/src/linux-headers-6.8.0-1030-azure'\nwarning: the compiler differs from the one used to build the kernel\n  The kernel was built by: x86_64-linux-gnu-gcc-13 (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0\n  You are using:           gcc-13 (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0\nSkipping BTF generation for /tmp/evaluator_kbuild_abdoo9b2/sample_driver.ko due to unavailability of vmlinux\n",
         "errors": 0,
         "warnings": 1,
         "built_module": "sample_driver.ko"
@@ -15,18 +15,18 @@
         "driver_type": "char",
         "functionality_score": 1.0,
         "fops_present": [
+            "release",
             "read",
             "open",
-            "write",
-            "release"
+            "write"
         ]
     },
     "style": {
-        "violations": 47,
-        "style_score": 0.53,
+        "violations": 2,
+        "style_score": 0.98,
         "documentation_score": 0.5,
         "maintainability_score": 0.998,
-        "output": "WARNING: Missing or malformed SPDX-License-Identifier tag in line 1\n#1: FILE: Tests/sample_driver.c:1:\n+#include <linux/module.h>\n\nWARNING: please, no spaces at the start of a line\n#16: FILE: Tests/sample_driver.c:16:\n+    printk(KERN_INFO \"Device opened\\n\");$\n\nWARNING: Prefer [subsystem eg: netdev]_info([subsystem]dev, ... then dev_info(dev, ... then pr_info(...  to printk(KERN_INFO ...\n#16: FILE: Tests/sample_driver.c:16:\n+    printk(KERN_INFO \"Device opened\\n\");\n\nWARNING: please, no spaces at the start of a line\n#17: FILE: Tests/sample_driver.c:17:\n+    return 0;$\n\nWARNING: please, no spaces at the start of a line\n#22: FILE: Tests/sample_driver.c:22:\n+    int bytes_read = 0;$\n\nERROR: trailing whitespace\n#24: FILE: Tests/sample_driver.c:24:\n+    strcpy(buffer, msg);  $\n\nWARNING: please, no spaces at the start of a line\n#24: FILE: Tests/sample_driver.c:24:\n+    strcpy(buffer, msg);  $\n\nWARNING: Prefer strscpy over strcpy - see: https://github.com/KSPP/linux/issues/88\n#24: FILE: Tests/sample_driver.c:24:\n+    strcpy(buffer, msg);  \n\nWARNING: please, no spaces at the start of a line\n#25: FILE: Tests/sample_driver.c:25:\n+    bytes_read = strlen(msg);$\n\nWARNING: please, no spaces at the start of a line\n#26: FILE: Tests/sample_driver.c:26:\n+    return bytes_read;$\n\nWARNING: please, no spaces at the start of a line\n#31: FILE: Tests/sample_driver.c:31:\n+    if (len > BUF_LEN) {$\n\nERROR: code indent should use tabs where possible\n#32: FILE: Tests/sample_driver.c:32:\n+        printk(KERN_ALERT \"Write too long!\\n\");$\n\nWARNING: please, no spaces at the start of a line\n#32: FILE: Tests/sample_driver.c:32:\n+        printk(KERN_ALERT \"Write too long!\\n\");$\n\nWARNING: Prefer [subsystem eg: netdev]_alert([subsystem]dev, ... then dev_alert(dev, ... then pr_alert(...  to printk(KERN_ALERT ...\n#32: FILE: Tests/sample_driver.c:32:\n+        printk(KERN_ALERT \"Write too long!\\n\");\n\nERROR: code indent should use tabs where possible\n#33: FILE: Tests/sample_driver.c:33:\n+        return -EINVAL;$\n\nWARNING: please, no spaces at the start of a line\n#33: FILE: Tests/sample_driver.c:33:\n+        return -EINVAL;$\n\nWARNING: please, no spaces at the start of a line\n#34: FILE: Tests/sample_driver.c:34:\n+    }$\n\nWARNING: please, no spaces at the start of a line\n#35: FILE: Tests/sample_driver.c:35:\n+    strncpy(msg, buff, len);$\n\nWARNING: Prefer strscpy, strscpy_pad, or __nonstring over strncpy - see: https://github.com/KSPP/linux/issues/90\n#35: FILE: Tests/sample_driver.c:35:\n+    strncpy(msg, buff, len);\n\nWARNING: please, no spaces at the start of a line\n#36: FILE: Tests/sample_driver.c:36:\n+    msg[len] = '\\0';$\n\nWARNING: please, no spaces at the start of a line\n#37: FILE: Tests/sample_driver.c:37:\n+    return len;$\n\nWARNING: please, no spaces at the start of a line\n#42: FILE: Tests/sample_driver.c:42:\n+    printk(KERN_INFO \"Device closed\\n\");$\n\nWARNING: Prefer [subsystem eg: netdev]_info([subsystem]dev, ... then dev_info(dev, ... then pr_info(...  to printk(KERN_INFO ...\n#42: FILE: Tests/sample_driver.c:42:\n+    printk(KERN_INFO \"Device closed\\n\");\n\nWARNING: please, no spaces at the start of a line\n#43: FILE: Tests/sample_driver.c:43:\n+    return 0;$\n\nWARNING: please, no spaces at the start of a line\n#47: FILE: Tests/sample_driver.c:47:\n+    .read = device_read,$\n\nWARNING: please, no spaces at the start of a line\n#48: FILE: Tests/sample_driver.c:48:\n+    .write = device_write,$\n\nWARNING: please, no spaces at the start of a line\n#49: FILE: Tests/sample_driver.c:49:\n+    .open = device_open,$\n\nWARNING: please, no spaces at the start of a line\n#50: FILE: Tests/sample_driver.c:50:\n+    .release = device_release$\n\nWARNING: please, no spaces at the start of a line\n#55: FILE: Tests/sample_driver.c:55:\n+    major = register_chrdev(0, DEVICE_NAME, &fops);$\n\nWARNING: please, no spaces at the start of a line\n#56: FILE: Tests/sample_driver.c:56:\n+    if (major < 0) {$\n\nERROR: code indent should use tabs where possible\n#57: FILE: Tests/sample_driver.c:57:\n+        printk(KERN_ALERT \"Registering char device failed with %d\\n\", major);$\n\nWARNING: please, no spaces at the start of a line\n#57: FILE: Tests/sample_driver.c:57:\n+        printk(KERN_ALERT \"Registering char device failed with %d\\n\", major);$\n\nWARNING: Prefer [subsystem eg: netdev]_alert([subsystem]dev, ... then dev_alert(dev, ... then pr_alert(...  to printk(KERN_ALERT ...\n#57: FILE: Tests/sample_driver.c:57:\n+        printk(KERN_ALERT \"Registering char device failed with %d\\n\", major);\n\nERROR: code indent should use tabs where possible\n#58: FILE: Tests/sample_driver.c:58:\n+        return major;$\n\nWARNING: please, no spaces at the start of a line\n#58: FILE: Tests/sample_driver.c:58:\n+        return major;$\n\nWARNING: please, no spaces at the start of a line\n#59: FILE: Tests/sample_driver.c:59:\n+    }$\n\nWARNING: please, no spaces at the start of a line\n#60: FILE: Tests/sample_driver.c:60:\n+    msg = kmalloc(BUF_LEN, GFP_KERNEL);$\n\nWARNING: please, no spaces at the start of a line\n#61: FILE: Tests/sample_driver.c:61:\n+    printk(KERN_INFO \"Sample driver loaded with major %d\\n\", major);$\n\nWARNING: Prefer [subsystem eg: netdev]_info([subsystem]dev, ... then dev_info(dev, ... then pr_info(...  to printk(KERN_INFO ...\n#61: FILE: Tests/sample_driver.c:61:\n+    printk(KERN_INFO \"Sample driver loaded with major %d\\n\", major);\n\nWARNING: please, no spaces at the start of a line\n#62: FILE: Tests/sample_driver.c:62:\n+    return 0;$\n\nWARNING: please, no spaces at the start of a line\n#67: FILE: Tests/sample_driver.c:67:\n+    unregister_chrdev(major, DEVICE_NAME);$\n\nWARNING: please, no spaces at the start of a line\n#68: FILE: Tests/sample_driver.c:68:\n+    kfree(msg);$\n\nWARNING: please, no spaces at the start of a line\n#69: FILE: Tests/sample_driver.c:69:\n+    printk(KERN_INFO \"Sample driver unloaded\\n\");$\n\nWARNING: Prefer [subsystem eg: netdev]_info([subsystem]dev, ... then dev_info(dev, ... then pr_info(...  to printk(KERN_INFO ...\n#69: FILE: Tests/sample_driver.c:69:\n+    printk(KERN_INFO \"Sample driver unloaded\\n\");\n\ntotal: 5 errors, 39 warnings, 77 lines checked\n\nNOTE: For some of the reported defects, checkpatch may be able to\n      mechanically convert to the typical style using --fix or --fix-inplace.\n\nNOTE: Whitespace errors detected.\n      You may wish to use scripts/cleanpatch or scripts/cleanfile\n\nTests/sample_driver.c has style problems, please review.\n\nNOTE: If any of the errors are false positives, please report\n      them to the maintainer, see CHECKPATCH in MAINTAINERS.\n"
+        "output": "#include <linux/module.h>\n#include <linux/kernel.h>\n#include <linux/fs.h>\n#include <linux/uaccess.h>\n#include <linux/slab.h>\n#include <linux/string.h>\n\n#define DEVICE_NAME \"sample\"\n#define BUF_LEN 1024\n\nstatic char *msg;\nstatic int major;\n\nstatic int device_open(struct inode *inode, struct file *file)\n{\n    printk(KERN_INFO \"Device opened\\n\");\n    return 0;\n}\n\nstatic ssize_t device_read(struct file *filp, char *buffer, size_t length, loff_t *offset)\n{\n    int bytes_read = 0;\n    // \u274c Style issue: long line + strcpy usage\n    strcpy(buffer, msg);  \n    bytes_read = strlen(msg);\n    return bytes_read;\n}\n\nstatic ssize_t device_write(struct file *filp, const char *buff, size_t len, loff_t *off)\n{\n    if (len > BUF_LEN) {\n        printk(KERN_ALERT \"Write too long!\\n\");\n        return -EINVAL;\n    }\n    strncpy(msg, buff, len);\n    msg[len] = '\\0';\n    return len;\n}\n\nstatic int device_release(struct inode *inode, struct file *file)\n{\n    printk(KERN_INFO \"Device closed\\n\");\n    return 0;\n}\n\nstatic struct file_operations fops = {\n    .read = device_read,\n    .write = device_write,\n    .open = device_open,\n    .release = device_release\n};\n\nstatic int __init sample_init(void)\n{\n    major = register_chrdev(0, DEVICE_NAME, &fops);\n    if (major < 0) {\n        printk(KERN_ALERT \"Registering char device failed with %d\\n\", major);\n        return major;\n    }\n    msg = kmalloc(BUF_LEN, GFP_KERNEL);\n    printk(KERN_INFO \"Sample driver loaded with major %d\\n\", major);\n    return 0;\n}\n\nstatic void __exit sample_exit(void)\n{\n    unregister_chrdev(major, DEVICE_NAME);\n    kfree(msg);\n    printk(KERN_INFO \"Sample driver unloaded\\n\");\n}\n\nmodule_init(sample_init);\nmodule_exit(sample_exit);\n\nMODULE_LICENSE(\"GPL\");\nMODULE_AUTHOR(\"Test Author\");\nMODULE_DESCRIPTION(\"Sample buggy driver for evaluator testing\");\n"
     },
     "security": {
         "issues": [
@@ -54,13 +54,18 @@
         "dmesg_success": false,
         "runtime_notes": "",
         "dynamic": {
-            "skipped": "no device node found"
+            "device_found": false,
+            "io_success": false,
+            "concurrency_success": false,
+            "notes": [
+                "No device node found under /dev/"
+            ]
         }
     },
-    "overall_score": 82.35,
+    "overall_score": 87.95,
     "breakdown": {
         "Correctness": {
-            "awarded": 38.0,
+            "awarded": 40.0,
             "max": 40.0,
             "details": [
                 "Compilation: success (method=kbuild)",
@@ -77,11 +82,11 @@
             ]
         },
         "Code Quality": {
-            "awarded": 13.23,
+            "awarded": 16.83,
             "max": 20.0,
             "details": [
                 {
-                    "style_score": 0.53,
+                    "style_score": 0.98,
                     "documentation_score": 0.5,
                     "maintainability_score": 0.998
                 }

@@ -1,34 +1,31 @@
 {
     "compilation": {
-        "success": true,
-        "errors": 1,
-        "warnings": 0,
-        "output": "Tests/1_gpt4.c:5:10: fatal error: linux/init.h: No such file or directory\n    5 | #include <linux/init.h>\n      |          ^~~~~~~~~~~~~~\ncompilation terminated.\n",
-        "note": "Soft pass: missing kernel headers only"
+        "success": false,
+        "method": "kbuild",
+        "output": "make: Entering directory '/usr/src/linux-headers-6.8.0-1030-azure'\n  CC [M]  /tmp/evaluator_kbuild_t5q6117p/1_gpt4.o\nmake: Leaving directory '/usr/src/linux-headers-6.8.0-1030-azure'\nwarning: the compiler differs from the one used to build the kernel\n  The kernel was built by: x86_64-linux-gnu-gcc-13 (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0\n  You are using:           gcc-13 (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0\n/tmp/evaluator_kbuild_t5q6117p/1_gpt4.c:37:12: error: static declaration of \u2018simple_open\u2019 follows non-static declaration\n   37 | static int simple_open(struct inode *inode, struct file *file)\n      |            ^~~~~~~~~~~\nIn file included from ./include/linux/compat.h:17,\n                 from ./arch/x86/include/asm/ia32.h:7,\n                 from ./arch/x86/include/asm/elf.h:10,\n                 from ./include/linux/elf.h:6,\n                 from ./include/linux/module.h:19,\n                 from /tmp/evaluator_kbuild_t5q6117p/1_gpt4.c:4:\n./include/linux/fs.h:3235:12: note: previous declaration of \u2018simple_open\u2019 with type \u2018int(struct inode *, struct file *)\u2019\n 3235 | extern int simple_open(struct inode *inode, struct file *file);\n      |            ^~~~~~~~~~~\nIn file included from ./arch/x86/include/asm/mem_encrypt.h:15,\n                 from ./include/linux/mem_encrypt.h:17,\n                 from ./arch/x86/include/asm/processor-flags.h:6,\n                 from ./arch/x86/include/asm/processor.h:5,\n                 from ./arch/x86/include/asm/timex.h:5,\n                 from ./include/linux/timex.h:67,\n                 from ./include/linux/time32.h:13,\n                 from ./include/linux/time.h:60,\n                 from ./include/linux/stat.h:19,\n                 from ./include/linux/module.h:13:\n/tmp/evaluator_kbuild_t5q6117p/1_gpt4.c: In function \u2018simple_init\u2019:\n./include/linux/init.h:188:22: error: passing argument 1 of \u2018class_create\u2019 from incompatible pointer type [-Werror=incompatible-pointer-types]\n  188 | #define THIS_MODULE (&__this_module)\n      |                     ~^~~~~~~~~~~~~~~\n      |                      |\n      |                      struct module *\n/tmp/evaluator_kbuild_t5q6117p/1_gpt4.c:194:37: note: in expansion of macro \u2018THIS_MODULE\u2019\n  194 |     simplechar_class = class_create(THIS_MODULE, CLASS_NAME);\n      |                                     ^~~~~~~~~~~\nIn file included from ./include/linux/device.h:31,\n                 from ./include/linux/cdev.h:8,\n                 from /tmp/evaluator_kbuild_t5q6117p/1_gpt4.c:7:\n./include/linux/device/class.h:228:54: note: expected \u2018const char *\u2019 but argument is of type \u2018struct module *\u2019\n  228 | struct class * __must_check class_create(const char *name);\n      |                                          ~~~~~~~~~~~~^~~~\n/tmp/evaluator_kbuild_t5q6117p/1_gpt4.c:194:24: error: too many arguments to function \u2018class_create\u2019\n  194 |     simplechar_class = class_create(THIS_MODULE, CLASS_NAME);\n      |                        ^~~~~~~~~~~~\n./include/linux/device/class.h:228:29: note: declared here\n  228 | struct class * __must_check class_create(const char *name);\n      |                             ^~~~~~~~~~~~\n/tmp/evaluator_kbuild_t5q6117p/1_gpt4.c: At top level:\n/tmp/evaluator_kbuild_t5q6117p/1_gpt4.c:24:23: warning: \u2018simplechar_device\u2019 defined but not used [-Wunused-variable]\n   24 | static struct device *simplechar_device;\n      |                       ^~~~~~~~~~~~~~~~~\ncc1: some warnings being treated as errors\nmake[2]: *** [scripts/Makefile.build:243: /tmp/evaluator_kbuild_t5q6117p/1_gpt4.o] Error 1\nmake[1]: *** [/usr/src/linux-headers-6.8.0-1030-azure/Makefile:1925: /tmp/evaluator_kbuild_t5q6117p] Error 2\nmake: *** [Makefile:240: __sub-make] Error 2\n",
+        "errors": 3,
+        "warnings": 2
     },
     "structure": {
         "module_init": true,
         "module_exit": true,
         "function_count": 7,
-        "score": 1.0
+        "avg_func_len": 1.0,
+        "driver_type": "char",
+        "functionality_score": 1.0,
+        "fops_present": [
+            "release",
+            "open",
+            "write",
+            "read"
+        ]
     },
     "style": {
-        "checks": {
-            "includes": 0.6666666666666666,
-            "metadata": 1.0,
-            "core_functions": 1.0,
-            "device_operations": 1.0,
-            "error_handling": 0.5
-        },
-        "score": 0.8833333333333333,
-        "function_count": 0,
-        "details": {
-            "includes_found": 2,
-            "metadata_found": 3.0,
-            "core_functions_found": 2.0,
-            "device_ops_found": 4,
-            "error_handling_indicators": 2.0
-        }
+        "violations": 8,
+        "style_score": 0.92,
+        "documentation_score": 0.6,
+        "maintainability_score": 0.998,
+        "output": "// simple_chardev.c\n// A minimal char device with a 1KB internal buffer and basic read/write support.\n\n#include <linux/module.h>\n#include <linux/init.h>\n#include <linux/fs.h>\n#include <linux/cdev.h>\n#include <linux/device.h>\n#include <linux/uaccess.h>\n#include <linux/mutex.h>\n#include <linux/slab.h>\n\n#define DEVICE_NAME \"simplechardev\"\n#define CLASS_NAME  \"simplechar\"\n#define BUFFER_SIZE 1024\n\nMODULE_LICENSE(\"GPL\");\nMODULE_AUTHOR(\"ChatGPT\");\nMODULE_DESCRIPTION(\"Simple character device with 1KB buffer\");\nMODULE_VERSION(\"0.1\");\n\nstatic dev_t dev_num;\nstatic struct class *simplechar_class;\nstatic struct device *simplechar_device;\n\nstruct simple_dev {\n    char *buffer;             // internal 1KB buffer\n    size_t data_len;          // how many valid bytes stored\n    struct cdev cdev;\n    struct mutex lock;        // protect buffer + data_len\n};\n\nstatic struct simple_dev *sdev;\n\n/* File operations */\n\nstatic int simple_open(struct inode *inode, struct file *file)\n{\n    struct simple_dev *dev = container_of(inode->i_cdev, struct simple_dev, cdev);\n    file->private_data = dev;\n    return 0;\n}\n\nstatic int simple_release(struct inode *inode, struct file *file)\n{\n    return 0;\n}\n\n/*\n * Read: copies up to 'count' bytes from device buffer starting at *ppos into user buffer.\n * Behavior: reading beyond data_len returns 0 (EOF).\n */\nstatic ssize_t simple_read(struct file *file, char __user *ubuf, size_t count, loff_t *ppos)\n{\n    struct simple_dev *dev = file->private_data;\n    ssize_t retval = 0;\n\n    if (mutex_lock_interruptible(&dev->lock))\n        return -ERESTARTSYS;\n\n    if (*ppos >= dev->data_len) {\n        /* nothing left to read */\n        retval = 0;\n        goto out;\n    }\n\n    /* limit read to available data */\n    if (count > dev->data_len - *ppos)\n        count = dev->data_len - *ppos;\n\n    if (copy_to_user(ubuf, dev->buffer + *ppos, count)) {\n        retval = -EFAULT;\n        goto out;\n    }\n\n    *ppos += count;\n    retval = count;\n\nout:\n    mutex_unlock(&dev->lock);\n    return retval;\n}\n\n/*\n * Write: copies up to 'count' bytes from user buffer into device buffer starting at *ppos.\n * Behavior: will not exceed BUFFER_SIZE; if writing past end, only the portion fitting into buffer is written.\n * After write, data_len updated to max(data_len, ppos + written).\n */\nstatic ssize_t simple_write(struct file *file, const char __user *ubuf, size_t count, loff_t *ppos)\n{\n    struct simple_dev *dev = file->private_data;\n    ssize_t retval = 0;\n    size_t max_can_write;\n\n    if (mutex_lock_interruptible(&dev->lock))\n        return -ERESTARTSYS;\n\n    if (*ppos >= BUFFER_SIZE) {\n        retval = -ENOSPC;\n        goto out;\n    }\n\n    max_can_write = BUFFER_SIZE - *ppos;\n    if (count > max_can_write)\n        count = max_can_write;\n\n    if (copy_from_user(dev->buffer + *ppos, ubuf, count)) {\n        retval = -EFAULT;\n        goto out;\n    }\n\n    *ppos += count;\n    if (dev->data_len < *ppos)\n        dev->data_len = *ppos;\n\n    retval = count;\n\nout:\n    mutex_unlock(&dev->lock);\n    return retval;\n}\n\n/* Optional: support llseek so userspace can set the position */\nstatic loff_t simple_llseek(struct file *file, loff_t offset, int whence)\n{\n    loff_t newpos = 0;\n\n    switch (whence) {\n    case SEEK_SET:\n        newpos = offset;\n        break;\n    case SEEK_CUR:\n        newpos = file->f_pos + offset;\n        break;\n    case SEEK_END:\n        newpos = BUFFER_SIZE + offset;\n        break;\n    default:\n        return -EINVAL;\n    }\n\n    if (newpos < 0 || newpos > BUFFER_SIZE)\n        return -EINVAL;\n\n    file->f_pos = newpos;\n    return newpos;\n}\n\nstatic const struct file_operations simple_fops = {\n    .owner   = THIS_MODULE,\n    .open    = simple_open,\n    .release = simple_release,\n    .read    = simple_read,\n    .write   = simple_write,\n    .llseek  = simple_llseek,\n};\n\nstatic int __init simple_init(void)\n{\n    int ret;\n    struct device *dev_ret;\n\n    /* allocate device number */\n    ret = alloc_chrdev_region(&dev_num, 0, 1, DEVICE_NAME);\n    if (ret < 0) {\n        pr_err(\"simplechardev: failed to allocate char dev region\\n\");\n        return ret;\n    }\n\n    /* allocate device struct */\n    sdev = kzalloc(sizeof(*sdev), GFP_KERNEL);\n    if (!sdev) {\n        ret = -ENOMEM;\n        goto unregister_region;\n    }\n\n    sdev->buffer = kzalloc(BUFFER_SIZE, GFP_KERNEL);\n    if (!sdev->buffer) {\n        ret = -ENOMEM;\n        goto free_sdev;\n    }\n    sdev->data_len = 0;\n    mutex_init(&sdev->lock);\n\n    cdev_init(&sdev->cdev, &simple_fops);\n    sdev->cdev.owner = THIS_MODULE;\n\n    ret = cdev_add(&sdev->cdev, dev_num, 1);\n    if (ret) {\n        pr_err(\"simplechardev: cdev_add failed\\n\");\n        goto free_buffer;\n    }\n\n    simplechar_class = class_create(THIS_MODULE, CLASS_NAME);\n    if (IS_ERR(simplechar_class)) {\n        ret = PTR_ERR(simplechar_class);\n        pr_err(\"simplechardev: class_create failed\\n\");\n        goto del_cdev;\n    }\n\n    dev_ret = device_create(simplechar_class, NULL, dev_num, NULL, DEVICE_NAME);\n    if (IS_ERR(dev_ret)) {\n        ret = PTR_ERR(dev_ret);\n        pr_err(\"simplechardev: device_create failed\\n\");\n        goto destroy_class;\n    }\n\n    pr_info(\"simplechardev: loaded (dev=%d:%d)\\n\", MAJOR(dev_num), MINOR(dev_num));\n    return 0;\n\ndestroy_class:\n    class_destroy(simplechar_class);\ndel_cdev:\n    cdev_del(&sdev->cdev);\nfree_buffer:\n    kfree(sdev->buffer);\nfree_sdev:\n    kfree(sdev);\nunregister_region:\n    unregister_chrdev_region(dev_num, 1);\n    return ret;\n}\n\nstatic void __exit simple_exit(void)\n{\n    device_destroy(simplechar_class, dev_num);\n    class_destroy(simplechar_class);\n    cdev_del(&sdev->cdev);\n    kfree(sdev->buffer);\n    kfree(sdev);\n    unregister_chrdev_region(dev_num, 1);\n    pr_info(\"simplechardev: unloaded\\n\");\n}\n\nmodule_init(simple_init);\nmodule_exit(simple_exit);\n"
     },
     "security": {
         "issues": [
@@ -43,12 +40,62 @@
         },
         "score": 0.85
     },
-    "overall_score": 83.92,
+    "meta_file": "Tests/1_gpt4.c",
+    "performance": {
+        "score": 0.9650000000000001,
+        "details": [
+            "complexity_hits 27 -> -0.3"
+        ]
+    },
+    "runtime": {
+        "compiled": false,
+        "loaded": false,
+        "unloaded": false,
+        "dmesg_success": false,
+        "runtime_notes": "Build failed: warning: the compiler differs from the one used to build the kernel\n  The kernel was built by: x86_64-linux-gnu-gcc-13 (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0\n  You are using:           gcc-13 (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0\n/workspaces/Linux-Driver-Code-Grader/Tests/1_gpt4.c:37:12: error: static declaration of \u2018simple_open\u2019 follows non-static declaration\n   37 | static int simple_open(struct inode *inode, struct file *file)\n      |            ^~~~~~~~~~~\nIn file included from ./include/linux/compat.h:17,\n                 from ./arch/x86/include/asm/ia32.h:7,\n                 from ./arch/x86/include/asm/elf.h:10,\n                 from ./include/linux/elf.h:6,\n                 from ./include/linux/module.h:19,\n                 from /workspaces/Linux-Driver-Code-Grader/Tests/1_gpt4.c:4:\n./include/linux/fs.h:3235:12: note: previous declaration of \u2018simple_open\u2019 with type \u2018int(struct inode *, struct file *)\u2019\n 3235 | extern int simple_open(struct inode *inode, struct file *file);\n      |            ^~~~~~~~~~~\nIn file included from ./arch/x86/include/asm/mem_encrypt.h:15,\n                 from ./include/linux/mem_encrypt.h:17,\n                 from ./arch/x86/include/asm/processor-flags.h:6,\n                 from ./arch/x86/include/asm/processor.h:5,\n                 from ./arch/x86/include/asm/timex.h:5,\n                 from ./include/linux/timex.h:67,\n                 from ./include/linux/time32.h:13,\n                 from ./include/linux/time.h:60,\n                 from ./include/linux/stat.h:19,\n                 from ./include/linux/module.h:13:\n/workspaces/Linux-Driver-Code-Grader/Tests/1_gpt4.c: In function \u2018simple_init\u2019:\n./include/linux/init.h:188:22: error: passing argument 1 of \u2018class_create\u2019 from incompatible pointer type [-Werror=incompatible-pointer-types]\n  188 | #define THIS_MODULE (&__this_module)\n      |                     ~^~~~~~~~~~~~~~~\n      |                      |\n      |                      struct module *\n/workspaces/Linux-Driver-Code-Grader/Tests/1_gpt4.c:194:37: note: in expansion of macro \u2018THIS_MODULE\u2019\n  194 |     simplechar_class = class_create(THIS_MODULE, CLASS_NAME);\n      |                                     ^~~~~~~~~~~\nIn file included from ./include/linux/device.h:31,\n                 from ./include/linux/cdev.h:8,\n                 from /workspaces/Linux-Driver-Code-Grader/Tests/1_gpt4.c:7:\n./include/linux/device/class.h:228:54: note: expected \u2018const char *\u2019 but argument is of type \u2018struct module *\u2019\n  228 | struct class * __must_check class_create(const char *name);\n      |                                          ~~~~~~~~~~~~^~~~\n/workspaces/Linux-Driver-Code-Grader/Tests/1_gpt4.c:194:24: error: too many arguments to function \u2018class_create\u2019\n  194 |     simplechar_class = class_create(THIS_MODULE, CLASS_NAME);\n      |                        ^~~~~~~~~~~~\n./include/linux/device/class.h:228:29: note: declared here\n  228 | struct class * __must_check class_create(const char *name);\n      |                             ^~~~~~~~~~~~\n/workspaces/Linux-Driver-Code-Grader/Tests/1_gpt4.c: At top level:\n/workspaces/Linux-Driver-Code-Grader/Tests/1_gpt4.c:24:23: warning: \u2018simplechar_device\u2019 defined but not used [-Wunused-variable]\n   24 | static struct device *simplechar_device;\n      |                       ^~~~~~~~~~~~~~~~~\ncc1: some warnings being treated as errors\nmake[2]: *** [scripts/Makefile.build:243: /workspaces/Linux-Driver-Code-Grader/Tests/1_gpt4.o] Error 1\nmake[1]: *** [/usr/src/linux-headers-6.8.0-1030-azure/Makefile:1925: /workspaces/Linux-Driver-Code-Grader/Tests] Error 2\nmake: *** [Makefile:240: __sub-make] Error 2",
+        "dynamic": {}
+    },
+    "overall_score": 57.85,
     "breakdown": {
-        "Correctness": 40.0,
-        "Security": 21.25,
-        "Code Quality": 17.666666666666664,
-        "Performance": 5,
-        "Advanced": 0
+        "Correctness": {
+            "awarded": 10.0,
+            "max": 40.0,
+            "details": [
+                "Compilation failed",
+                "Functionality score: 1.00 -> 10.00/10",
+                "Runtime score: 0.0/10 (failed to load, notes: Build failed: warning: the compiler differs from the one used to build the kernel\n  The kernel was built by: x86_64-linux-gnu-gcc-13 (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0\n  You are using:           gcc-13 (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0\n/workspaces/Linux-Driver-Code-Grader/Tests/1_gpt4.c:37:12: error: static declaration of \u2018simple_open\u2019 follows non-static declaration\n   37 | static int simple_open(struct inode *inode, struct file *file)\n      |            ^~~~~~~~~~~\nIn file included from ./include/linux/compat.h:17,\n                 from ./arch/x86/include/asm/ia32.h:7,\n                 from ./arch/x86/include/asm/elf.h:10,\n                 from ./include/linux/elf.h:6,\n                 from ./include/linux/module.h:19,\n                 from /workspaces/Linux-Driver-Code-Grader/Tests/1_gpt4.c:4:\n./include/linux/fs.h:3235:12: note: previous declaration of \u2018simple_open\u2019 with type \u2018int(struct inode *, struct file *)\u2019\n 3235 | extern int simple_open(struct inode *inode, struct file *file);\n      |            ^~~~~~~~~~~\nIn file included from ./arch/x86/include/asm/mem_encrypt.h:15,\n                 from ./include/linux/mem_encrypt.h:17,\n                 from ./arch/x86/include/asm/processor-flags.h:6,\n                 from ./arch/x86/include/asm/processor.h:5,\n                 from ./arch/x86/include/asm/timex.h:5,\n                 from ./include/linux/timex.h:67,\n                 from ./include/linux/time32.h:13,\n                 from ./include/linux/time.h:60,\n                 from ./include/linux/stat.h:19,\n                 from ./include/linux/module.h:13:\n/workspaces/Linux-Driver-Code-Grader/Tests/1_gpt4.c: In function \u2018simple_init\u2019:\n./include/linux/init.h:188:22: error: passing argument 1 of \u2018class_create\u2019 from incompatible pointer type [-Werror=incompatible-pointer-types]\n  188 | #define THIS_MODULE (&__this_module)\n      |                     ~^~~~~~~~~~~~~~~\n      |                      |\n      |                      struct module *\n/workspaces/Linux-Driver-Code-Grader/Tests/1_gpt4.c:194:37: note: in expansion of macro \u2018THIS_MODULE\u2019\n  194 |     simplechar_class = class_create(THIS_MODULE, CLASS_NAME);\n      |                                     ^~~~~~~~~~~\nIn file included from ./include/linux/device.h:31,\n                 from ./include/linux/cdev.h:8,\n                 from /workspaces/Linux-Driver-Code-Grader/Tests/1_gpt4.c:7:\n./include/linux/device/class.h:228:54: note: expected \u2018const char *\u2019 but argument is of type \u2018struct module *\u2019\n  228 | struct class * __must_check class_create(const char *name);\n      |                                          ~~~~~~~~~~~~^~~~\n/workspaces/Linux-Driver-Code-Grader/Tests/1_gpt4.c:194:24: error: too many arguments to function \u2018class_create\u2019\n  194 |     simplechar_class = class_create(THIS_MODULE, CLASS_NAME);\n      |                        ^~~~~~~~~~~~\n./include/linux/device/class.h:228:29: note: declared here\n  228 | struct class * __must_check class_create(const char *name);\n      |                             ^~~~~~~~~~~~\n/workspaces/Linux-Driver-Code-Grader/Tests/1_gpt4.c: At top level:\n/workspaces/Linux-Driver-Code-Grader/Tests/1_gpt4.c:24:23: warning: \u2018simplechar_device\u2019 defined but not used [-Wunused-variable]\n   24 | static struct device *simplechar_device;\n      |                       ^~~~~~~~~~~~~~~~~\ncc1: some warnings being treated as errors\nmake[2]: *** [scripts/Makefile.build:243: /workspaces/Linux-Driver-Code-Grader/Tests/1_gpt4.o] Error 1\nmake[1]: *** [/usr/src/linux-headers-6.8.0-1030-azure/Makefile:1925: /workspaces/Linux-Driver-Code-Grader/Tests] Error 2\nmake: *** [Makefile:240: __sub-make] Error 2)"
+            ]
+        },
+        "Security": {
+            "awarded": 21.25,
+            "max": 25.0,
+            "details": [
+                "sub_scores: {'memory_safety': 1.0, 'resource_mgmt': 1.0, 'race_conditions': 1.0, 'input_validation': 0.39999999999999997}",
+                "issues: ['copy_to_user_unchecked', 'copy_from_user_unchecked']"
+            ]
+        },
+        "Code Quality": {
+            "awarded": 16.95,
+            "max": 20.0,
+            "details": [
+                {
+                    "style_score": 0.92,
+                    "documentation_score": 0.6,
+                    "maintainability_score": 0.998
+                }
+            ]
+        },
+        "Performance": {
+            "awarded": 9.65,
+            "max": 10.0,
+            "details": [
+                "complexity_hits 27 -> -0.3"
+            ]
+        },
+        "Advanced": {
+            "awarded": 0.0,
+            "max": 5.0,
+            "details": []
+        }
     }
 }

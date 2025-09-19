@@ -1,13 +1,14 @@
 def score_runtime(runtime_results):
     """
-    Assign points for runtime behavior (part of Correctness).
-    Max: 10 points.
+    Assign points for runtime behavior.
+    Max: 10 points under Correctness.
     """
-    if not runtime_results:
-        return 0.0, "Runtime not executed"
-
     score = 0.0
     details = []
+
+    if not runtime_results:
+        details.append("Runtime skipped")
+        return score, details
 
     if runtime_results.get("compiled"):
         score += 2.0
@@ -15,28 +16,28 @@ def score_runtime(runtime_results):
     if runtime_results.get("loaded"):
         score += 4.0
         details.append("loaded OK (+4)")
-    else:
-        details.append("failed to load")
     if runtime_results.get("unloaded"):
         score += 2.0
         details.append("unloaded OK (+2)")
     if runtime_results.get("dmesg_success"):
         score += 2.0
-        details.append("dmesg captured (+2)")
+        details.append("dmesg output OK (+2)")
 
-    if runtime_results.get("runtime_notes"):
-        details.append(f"notes: {runtime_results['runtime_notes']}")
+    if not details:
+        details.append(
+            f"failed to load, notes: {runtime_results.get('runtime_notes','')}"
+        )
 
-    return min(score, 10.0), ", ".join(details)
+    return score, details
 
 
 def score_correctness(results):
     breakdown = {"awarded": 0.0, "max": 40.0, "details": []}
 
-    # Compilation (20)
+    # Compilation
     comp = results.get("compilation", {})
     if comp.get("success"):
-        breakdown["awarded"] += 20.0
+        breakdown["awarded"] += 30.0
         breakdown["details"].append(
             f"Compilation: success (method={comp.get('method')})"
         )
@@ -45,7 +46,7 @@ def score_correctness(results):
     else:
         breakdown["details"].append("Compilation failed")
 
-    # Functionality (10)
+    # Functionality
     structure = results.get("structure", {})
     func_score = structure.get("functionality_score", 0.0)
     func_awarded = round(func_score * 10.0, 2)
@@ -54,85 +55,81 @@ def score_correctness(results):
         f"Functionality score: {func_score:.2f} -> {func_awarded:.2f}/10"
     )
 
-    # Runtime (10)
-    runtime = results.get("runtime", {})
-    rt_score, rt_details = score_runtime(runtime)
-    rt_awarded = round(rt_score, 2)  # runtime returns 0..10 already
+    # Runtime
+    runtime_results = results.get("runtime", {})
+    rt_awarded, rt_details = score_runtime(runtime_results)
     breakdown["awarded"] += rt_awarded
-    breakdown["details"].append(f"Runtime score: {rt_awarded}/10 ({rt_details})")
+    breakdown["details"].append(f"Runtime score: {rt_awarded}/10 ({', '.join(rt_details)})")
 
-    # Ensure not exceeding max (safety check)
-    if breakdown["awarded"] > breakdown["max"]:
-        breakdown["awarded"] = breakdown["max"]
-
+    # Cap at max
+    breakdown["awarded"] = min(breakdown["awarded"], breakdown["max"])
     return breakdown
 
+
 def score_security(results):
-    breakdown = {"awarded": 0.0, "max": 25.0, "details": []}
     sec = results.get("security", {})
     sec_score = sec.get("score", 1.0)
-    breakdown["awarded"] = round(sec_score * 25.0, 2)
+    sec_awarded = round(sec_score * 25.0, 2)
+    breakdown = {"awarded": sec_awarded, "max": 25.0, "details": []}
     if sec.get("sub_scores"):
-        breakdown["details"].append(f"sub_scores: {sec['sub_scores']}")
+        breakdown["details"].append(f"sub_scores: {sec.get('sub_scores')}")
     if sec.get("issues"):
-        breakdown["details"].append(f"issues: {sec['issues']}")
+        breakdown["details"].append(f"issues: {sec.get('issues')}")
     return breakdown
 
 
 def score_code_quality(results):
-    breakdown = {"awarded": 0.0, "max": 20.0, "details": []}
     style = results.get("style", {})
     style_score = style.get("style_score", 1.0)
     doc_score = style.get("documentation_score", 1.0)
     maintain_score = style.get("maintainability_score", 1.0)
-
     cq_normalized = (style_score * 0.4) + (doc_score * 0.3) + (maintain_score * 0.3)
-    breakdown["awarded"] = round(cq_normalized * 20.0, 2)
-    breakdown["details"].append({
-        "style_score": round(style_score, 3),
-        "documentation_score": round(doc_score, 3),
-        "maintainability_score": round(maintain_score, 3)
-    })
+    cq_awarded = round(cq_normalized * 20.0, 2)
+    breakdown = {"awarded": cq_awarded, "max": 20.0, "details": []}
+    breakdown["details"].append(
+        {
+            "style_score": round(style_score, 3),
+            "documentation_score": round(doc_score, 3),
+            "maintainability_score": round(maintain_score, 3),
+        }
+    )
     return breakdown
 
 
 def score_performance(results):
-    breakdown = {"awarded": 0.0, "max": 10.0, "details": []}
     perf = results.get("performance", {})
     perf_score = perf.get("score", 1.0)
-    breakdown["awarded"] = round(perf_score * 10.0, 2)
-    breakdown["details"] = perf.get("details", [])
-    return breakdown
+    perf_awarded = round(perf_score * 10.0, 2)
+    return {
+        "awarded": perf_awarded,
+        "max": 10.0,
+        "details": perf.get("details", []),
+    }
 
 
 def score_advanced(results):
-    breakdown = {"awarded": 0.0, "max": 5.0, "details": []}
     adv_score = 0.0
-    adv_present = []
+    adv_details = []
     fp = results.get("meta_file")
-
     if fp:
         try:
             txt = open(fp).read()
             if "devm_" in txt:
                 adv_score += 1.5
-                adv_present.append("devm_* used")
+                adv_details.append("devm_* used")
             if "of_match_table" in txt or "of_device_id" in txt or "of_" in txt:
                 adv_score += 1.5
-                adv_present.append("device-tree support")
+                adv_details.append("device-tree support")
             if "suspend" in txt or "resume" in txt or "pm_ops" in txt:
                 adv_score += 1.0
-                adv_present.append("pm hooks")
+                adv_details.append("pm hooks")
             if "debugfs" in txt or "pr_debug" in txt:
                 adv_score += 1.0
-                adv_present.append("debug helpers")
+                adv_details.append("debug helpers")
         except Exception:
             pass
-
-    breakdown["awarded"] = round(min(5.0, adv_score), 2)
-    if adv_present:
-        breakdown["details"].append(adv_present)
-    return breakdown
+    adv_awarded = round(min(5.0, adv_score), 2)
+    return {"awarded": adv_awarded, "max": 5.0, "details": adv_details}
 
 
 def calculate_score(results):
@@ -144,7 +141,6 @@ def calculate_score(results):
         "Advanced": score_advanced(results),
     }
 
-    total_awarded = sum(section["awarded"] for section in breakdown.values())
+    total_awarded = sum(bd["awarded"] for bd in breakdown.values())
     final_score = round(total_awarded, 2)
-
     return final_score, breakdown
