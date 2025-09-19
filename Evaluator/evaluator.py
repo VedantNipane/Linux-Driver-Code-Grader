@@ -49,7 +49,7 @@ def main(file_path):
     results["breakdown"] = breakdown
 
     # Reporting
-    generate_report(results, file_path)
+    # generate_report(results, file_path)
 
     # Logging
     log_score(file_path, results, final_score,breakdown)

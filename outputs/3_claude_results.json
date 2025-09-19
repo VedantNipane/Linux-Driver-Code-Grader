@@ -47,7 +47,7 @@
         "loaded": false,
         "unloaded": false,
         "dmesg_success": false,
-        "runtime_notes": "Build failed: warning: the compiler differs from the one used to build the kernel\n  The kernel was built by: x86_64-linux-gnu-gcc-13 (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0\n  You are using:           gcc-13 (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0\n/workspaces/Linux-Driver-Code-Grader/Tests/3_claude.c:7:10: fatal error: linux/genhd.h: No such file or directory\n    7 | #include <linux/genhd.h>\n      |          ^~~~~~~~~~~~~~~\ncompilation terminated.\nmake[3]: *** [scripts/Makefile.build:243: /workspaces/Linux-Driver-Code-Grader/Tests/3_claude.o] Error 1\nmake[2]: *** [/usr/src/linux-headers-6.8.0-1030-azure/Makefile:1925: /workspaces/Linux-Driver-Code-Grader/Tests] Error 2\nmake[1]: *** [Makefile:240: __sub-make] Error 2",
+        "runtime_notes": "Build failed: warning: the compiler differs from the one used to build the kernel\n  The kernel was built by: x86_64-linux-gnu-gcc-13 (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0\n  You are using:           gcc-13 (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0\n/home/aabid/Desktop/Linux-Driver-Code-Grader/Tests/3_claude.c:7:10: fatal error: linux/genhd.h: No such file or directory\n    7 | #include <linux/genhd.h>\n      |          ^~~~~~~~~~~~~~~\ncompilation terminated.\nmake[3]: *** [scripts/Makefile.build:243: /home/aabid/Desktop/Linux-Driver-Code-Grader/Tests/3_claude.o] Error 1\nmake[2]: *** [/usr/src/linux-headers-6.8.0-58-generic/Makefile:1925: /home/aabid/Desktop/Linux-Driver-Code-Grader/Tests] Error 2\nmake[1]: *** [Makefile:240: __sub-make] Error 2",
         "dynamic": {}
     },
     "overall_score": 89.88,
@@ -59,7 +59,7 @@
                 "Compilation: success (method=gcc-fallback)",
                 "Soft pass: missing kernel headers only",
                 "Functionality score: 1.00 -> 10.00/10",
-                "Runtime score: 0.0/10 (failed to load, notes: Build failed: warning: the compiler differs from the one used to build the kernel\n  The kernel was built by: x86_64-linux-gnu-gcc-13 (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0\n  You are using:           gcc-13 (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0\n/workspaces/Linux-Driver-Code-Grader/Tests/3_claude.c:7:10: fatal error: linux/genhd.h: No such file or directory\n    7 | #include <linux/genhd.h>\n      |          ^~~~~~~~~~~~~~~\ncompilation terminated.\nmake[3]: *** [scripts/Makefile.build:243: /workspaces/Linux-Driver-Code-Grader/Tests/3_claude.o] Error 1\nmake[2]: *** [/usr/src/linux-headers-6.8.0-1030-azure/Makefile:1925: /workspaces/Linux-Driver-Code-Grader/Tests] Error 2\nmake[1]: *** [Makefile:240: __sub-make] Error 2)"
+                "Runtime score: 0.0/10 (failed to load, notes: Build failed: warning: the compiler differs from the one used to build the kernel\n  The kernel was built by: x86_64-linux-gnu-gcc-13 (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0\n  You are using:           gcc-13 (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0\n/home/aabid/Desktop/Linux-Driver-Code-Grader/Tests/3_claude.c:7:10: fatal error: linux/genhd.h: No such file or directory\n    7 | #include <linux/genhd.h>\n      |          ^~~~~~~~~~~~~~~\ncompilation terminated.\nmake[3]: *** [scripts/Makefile.build:243: /home/aabid/Desktop/Linux-Driver-Code-Grader/Tests/3_claude.o] Error 1\nmake[2]: *** [/usr/src/linux-headers-6.8.0-58-generic/Makefile:1925: /home/aabid/Desktop/Linux-Driver-Code-Grader/Tests] Error 2\nmake[1]: *** [Makefile:240: __sub-make] Error 2)"
             ]
         },
         "Security": {

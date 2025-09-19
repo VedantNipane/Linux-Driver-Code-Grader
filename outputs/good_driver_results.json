@@ -2,7 +2,7 @@
     "compilation": {
         "success": true,
         "method": "kbuild",
-        "output": "make[1]: Entering directory '/usr/src/linux-headers-6.8.0-1030-azure'\n  CC [M]  /tmp/evaluator_kbuild_ubqnbkiy/good_driver.o\n  MODPOST /tmp/evaluator_kbuild_ubqnbkiy/Module.symvers\n  CC [M]  /tmp/evaluator_kbuild_ubqnbkiy/good_driver.mod.o\n  LD [M]  /tmp/evaluator_kbuild_ubqnbkiy/good_driver.ko\n  BTF [M] /tmp/evaluator_kbuild_ubqnbkiy/good_driver.ko\nmake[1]: Leaving directory '/usr/src/linux-headers-6.8.0-1030-azure'\nwarning: the compiler differs from the one used to build the kernel\n  The kernel was built by: x86_64-linux-gnu-gcc-13 (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0\n  You are using:           gcc-13 (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0\nSkipping BTF generation for /tmp/evaluator_kbuild_ubqnbkiy/good_driver.ko due to unavailability of vmlinux\n",
+        "output": "make[1]: Entering directory '/usr/src/linux-headers-6.8.0-58-generic'\n  CC [M]  /tmp/evaluator_kbuild_fp0f0x17/good_driver.o\n  MODPOST /tmp/evaluator_kbuild_fp0f0x17/Module.symvers\n  CC [M]  /tmp/evaluator_kbuild_fp0f0x17/good_driver.mod.o\n  LD [M]  /tmp/evaluator_kbuild_fp0f0x17/good_driver.ko\n  BTF [M] /tmp/evaluator_kbuild_fp0f0x17/good_driver.ko\nmake[1]: Leaving directory '/usr/src/linux-headers-6.8.0-58-generic'\nwarning: the compiler differs from the one used to build the kernel\n  The kernel was built by: x86_64-linux-gnu-gcc-13 (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0\n  You are using:           gcc-13 (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0\nSkipping BTF generation for /tmp/evaluator_kbuild_fp0f0x17/good_driver.ko due to unavailability of vmlinux\n",
         "errors": 0,
         "warnings": 1,
         "built_module": "good_driver.ko"
@@ -15,10 +15,10 @@
         "driver_type": "char",
         "functionality_score": 1.0,
         "fops_present": [
-            "release",
             "write",
+            "read",
             "open",
-            "read"
+            "release"
         ]
     },
     "style": {

@@ -2,6 +2,9 @@ import csv
 import os
 from datetime import datetime
 
+REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+LOG_FILE = os.path.join(REPO_ROOT,"score_logs.csv")
+
 def log_score(file_path, results, overall_score, breakdown):
     """
     Append evaluation results to score_logs.csv with full breakdown.
@@ -28,7 +31,7 @@ def log_score(file_path, results, overall_score, breakdown):
         max_pts = data.get("max", 0.0)
         row[category] = f"{awarded:.1f}/{max_pts:.0f}"
 
-    with open(log_file, "a", newline="") as f:
+    with open(LOG_FILE, "a", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=row.keys())
         if not file_exists:
             writer.writeheader()
