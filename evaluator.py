@@ -7,6 +7,7 @@ from performance_checker import run_performance_check
 from scoring import calculate_score
 from reporter import generate_report
 from logger import log_score
+from runtime_checker import run_runtime_checks
 
 import sys
 import os
@@ -37,6 +38,10 @@ def main(file_path):
     # 5. Performance checks
     results["performance"] = run_performance_check(file_path, results["structure"])
 
+    # Runtime checks
+    runtime_results = run_runtime_checks(file_path)
+    results["runtime"] = runtime_results
+    
     # 6. Scoring
     final_score, breakdown = calculate_score(results)
 
@@ -44,7 +49,7 @@ def main(file_path):
     results["breakdown"] = breakdown
 
     # Reporting
-    # generate_report(results, file_path)
+    generate_report(results, file_path)
 
     # Logging
     log_score(file_path, results, final_score,breakdown)

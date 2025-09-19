@@ -1,11 +1,11 @@
 {
     "compilation": {
         "success": true,
-        "method": "gcc",
-        "output": "Tests/sample_driver.c:4:10: fatal error: linux/uaccess.h: No such file or directory\n    4 | #include <linux/uaccess.h>\n      |          ^~~~~~~~~~~~~~~~~\ncompilation terminated.\n",
-        "errors": 1,
-        "warnings": 0,
-        "note": "Soft pass: missing kernel headers only"
+        "method": "kbuild",
+        "output": "make: Entering directory '/usr/src/linux-headers-6.8.0-1030-azure'\n  CC [M]  /tmp/evaluator_kbuild_c_5_pjtl/sample_driver.o\n  MODPOST /tmp/evaluator_kbuild_c_5_pjtl/Module.symvers\n  CC [M]  /tmp/evaluator_kbuild_c_5_pjtl/sample_driver.mod.o\n  LD [M]  /tmp/evaluator_kbuild_c_5_pjtl/sample_driver.ko\n  BTF [M] /tmp/evaluator_kbuild_c_5_pjtl/sample_driver.ko\nmake: Leaving directory '/usr/src/linux-headers-6.8.0-1030-azure'\nwarning: the compiler differs from the one used to build the kernel\n  The kernel was built by: x86_64-linux-gnu-gcc-13 (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0\n  You are using:           gcc-13 (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0\nSkipping BTF generation for /tmp/evaluator_kbuild_c_5_pjtl/sample_driver.ko due to unavailability of vmlinux\n",
+        "errors": 0,
+        "warnings": 1,
+        "built_module": "sample_driver.ko"
     },
     "structure": {
         "module_init": true,
@@ -15,10 +15,10 @@
         "driver_type": "char",
         "functionality_score": 1.0,
         "fops_present": [
-            "write",
-            "open",
             "release",
-            "read"
+            "read",
+            "open",
+            "write"
         ]
     },
     "style": {
@@ -47,15 +47,22 @@
             "large kmalloc detected -> -2.0"
         ]
     },
-    "overall_score": 84.35,
+    "runtime": {
+        "compiled": true,
+        "loaded": true,
+        "unloaded": true,
+        "dmesg_success": false,
+        "runtime_notes": ""
+    },
+    "overall_score": 82.35,
     "breakdown": {
         "Correctness": {
-            "awarded": 40.0,
+            "awarded": 38.0,
             "max": 40.0,
             "details": [
-                "Compilation: success (method=gcc)",
-                "Soft pass: missing kernel headers only",
-                "Functionality score: 1.00 -> 10.00/10"
+                "Compilation: success (method=kbuild)",
+                "Functionality score: 1.00 -> 10.00/10",
+                "Runtime score: 8.0/10 (compiled OK (+2), loaded OK (+4), unloaded OK (+2))"
             ]
         },
         "Security": {
