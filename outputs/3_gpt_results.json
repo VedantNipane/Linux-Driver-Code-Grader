@@ -1,34 +1,27 @@
 {
     "compilation": {
         "success": true,
+        "method": "gcc-fallback",
+        "output": "Tests/3_gpt.c:15:10: fatal error: linux/blkdev.h: No such file or directory\n   15 | #include <linux/blkdev.h>\n      |          ^~~~~~~~~~~~~~~~\ncompilation terminated.\n",
         "errors": 1,
         "warnings": 0,
-        "output": "Tests/3_gpt.c:15:10: fatal error: linux/blkdev.h: No such file or directory\n   15 | #include <linux/blkdev.h>\n      |          ^~~~~~~~~~~~~~~~\ncompilation terminated.\n",
         "note": "Soft pass: missing kernel headers only"
     },
     "structure": {
         "module_init": true,
         "module_exit": true,
         "function_count": 6,
-        "score": 1.0
+        "avg_func_len": 1.0,
+        "driver_type": "block",
+        "functionality_score": 1.0,
+        "fops_present": []
     },
     "style": {
-        "checks": {
-            "includes": 0.6666666666666666,
-            "metadata": 1.0,
-            "core_functions": 1.0,
-            "device_operations": 1.0,
-            "error_handling": 0.75
-        },
-        "score": 0.9083333333333333,
-        "function_count": 0,
-        "details": {
-            "includes_found": 2,
-            "metadata_found": 3.0,
-            "core_functions_found": 2.0,
-            "device_ops_found": 2,
-            "error_handling_indicators": 3.0
-        }
+        "violations": 2,
+        "style_score": 0.98,
+        "documentation_score": 0.6,
+        "maintainability_score": 0.998,
+        "output": "/*\n * simple_blkdev.c\n *\n * Minimal block device driver (virtual RAM disk) with:\n *  - block device registration\n *  - request handling via make_request_fn\n *  - basic read/write block operations\n *  - 1MB virtual disk size\n *\n * This is a learning example, not meant for production.\n */\n\n#include <linux/module.h>\n#include <linux/kernel.h>\n#include <linux/blkdev.h>\n#include <linux/blk_types.h>\n#include <linux/hdreg.h>\n#include <linux/vmalloc.h>\n#include <linux/fs.h>\n#include <linux/errno.h>\n#include <linux/slab.h>\n#include <linux/bio.h>\n#include <linux/genhd.h>\n\n#define DEVICE_NAME \"simpleblk\"\n#define KERNEL_SECTOR_SIZE 512\n#define DISK_SIZE_BYTES (1024 * 1024) /* 1 MB */\n#define NSECTORS (DISK_SIZE_BYTES / KERNEL_SECTOR_SIZE)\n\nstatic int major_num = 0;\nmodule_param(major_num, int, 0444);\nMODULE_PARM_DESC(major_num, \"Major number (0 = dynamic)\");\n\nstruct simple_blkdev {\n    unsigned char *data;       /* vmalloc'd disk data */\n    spinlock_t lock;          /* request queue lock */\n    struct request_queue *queue;\n    struct gendisk *gd;\n};\n\nstatic struct simple_blkdev *dev = NULL;\n\n/* Helper: bounds check */\nstatic inline int check_bounds(sector_t sector, unsigned int nbytes)\n{\n    unsigned long offset = sector * KERNEL_SECTOR_SIZE;\n    if (offset + nbytes > DISK_SIZE_BYTES)\n        return -EIO;\n    return 0;\n}\n\n/* make_request function: handle BIOs */\nstatic blk_status_t simple_make_request(struct request_queue *q, struct bio *bio)\n{\n    struct bio_vec bvec;\n    struct bvec_iter iter;\n    sector_t sector = bio->bi_iter.bi_sector; /* starting sector */\n    int rw = bio_data_dir(bio); /* READ = 0, WRITE = 1 */\n\n    bio_for_each_segment(bvec, bio, iter) {\n        void *disk_mem;\n        void *iovec_mem;\n        unsigned int len = bvec.bv_len;\n        unsigned long offset = sector * KERNEL_SECTOR_SIZE + bvec.bv_offset - bvec.bv_offset; /* simplified */\n        /* Note: we'll compute offset differently below */\n\n        /* bounds check */\n        if (check_bounds(sector, len)) {\n            bio_io_error(bio);\n            return BLK_STS_IOERR;\n        }\n\n        /* Map page */\n        iovec_mem = kmap_atomic(bvec.bv_page) + bvec.bv_offset;\n\n        /* Compute disk memory pointer for this segment */\n        disk_mem = dev->data + (sector * KERNEL_SECTOR_SIZE);\n\n        if (rw == WRITE) {\n            /* write from iovec -> disk */\n            memcpy(disk_mem, iovec_mem, len);\n        } else {\n            /* read from disk -> iovec */\n            memcpy(iovec_mem, disk_mem, len);\n        }\n\n        kunmap_atomic(iovec_mem - bvec.bv_offset);\n\n        /* advance sector by the number of sectors consumed */\n        sector += len / KERNEL_SECTOR_SIZE;\n    }\n\n    bio_endio(bio);\n    return BLK_STS_OK;\n}\n\nstatic int simple_open(struct block_device *bdev, fmode_t mode)\n{\n    /* nothing special */\n    return 0;\n}\n\nstatic void simple_release(struct gendisk *gd, fmode_t mode)\n{\n    /* nothing special */\n}\n\nstatic struct block_device_operations simple_ops = {\n    .owner = THIS_MODULE,\n    .open = simple_open,\n    .release = simple_release,\n};\n\nstatic int __init simple_blk_init(void)\n{\n    int ret = 0;\n\n    dev = kzalloc(sizeof(*dev), GFP_KERNEL);\n    if (!dev)\n        return -ENOMEM;\n\n    /* allocate the in-memory disk */\n    dev->data = vmalloc(DISK_SIZE_BYTES);\n    if (!dev->data) {\n        pr_err(\"simpleblk: vmalloc failed\\n\");\n        ret = -ENOMEM;\n        goto out_free_dev;\n    }\n    memset(dev->data, 0, DISK_SIZE_BYTES);\n\n    spin_lock_init(&dev->lock);\n\n    /* Register block device major */\n    major_num = register_blkdev(major_num, DEVICE_NAME);\n    if (major_num <= 0) {\n        pr_err(\"simpleblk: register_blkdev failed\\n\");\n        ret = -EBUSY;\n        goto out_vfree;\n    }\n\n    /* Create request queue */\n    dev->queue = blk_alloc_queue(GFP_KERNEL);\n    if (!dev->queue) {\n        pr_err(\"simpleblk: blk_alloc_queue failed\\n\");\n        ret = -ENOMEM;\n        goto out_unregister;\n    }\n    blk_queue_logical_block_size(dev->queue, KERNEL_SECTOR_SIZE);\n    blk_queue_physical_block_size(dev->queue, KERNEL_SECTOR_SIZE);\n    blk_queue_max_hw_sectors(dev->queue, 128);\n    blk_queue_make_request(dev->queue, simple_make_request);\n\n    /* Allocate gendisk */\n    dev->gd = alloc_disk(1);\n    if (!dev->gd) {\n        pr_err(\"simpleblk: alloc_disk failed\\n\");\n        ret = -ENOMEM;\n        goto out_cleanup_queue;\n    }\n\n    dev->gd->major = major_num;\n    dev->gd->first_minor = 0;\n    dev->gd->fops = &simple_ops;\n    dev->gd->queue = dev->queue;\n    dev->gd->private_data = dev;\n    snprintf(dev->gd->disk_name, DISK_NAME_LEN, DEVICE_NAME);\n    set_capacity(dev->gd, NSECTORS);\n\n    add_disk(dev->gd);\n\n    pr_info(\"simpleblk: loaded (major=%d), size=%d bytes (%d sectors)\\n\",\n            major_num, DISK_SIZE_BYTES, NSECTORS);\n    return 0;\n\nout_cleanup_queue:\n    blk_cleanup_queue(dev->queue);\nout_unregister:\n    unregister_blkdev(major_num, DEVICE_NAME);\nout_vfree:\n    vfree(dev->data);\nout_free_dev:\n    kfree(dev);\n    return ret;\n}\n\nstatic void __exit simple_blk_exit(void)\n{\n    if (!dev)\n        return;\n\n    del_gendisk(dev->gd);\n    put_disk(dev->gd);\n    blk_cleanup_queue(dev->queue);\n    unregister_blkdev(major_num, DEVICE_NAME);\n    vfree(dev->data);\n    kfree(dev);\n    pr_info(\"simpleblk: unloaded\\n\");\n}\n\nmodule_init(simple_blk_init);\nmodule_exit(simple_blk_exit);\n\nMODULE_LICENSE(\"GPL\");\nMODULE_AUTHOR(\"ChatGPT\");\nMODULE_DESCRIPTION(\"Simple block device (1MB RAM disk) example\");\nMODULE_VERSION(\"0.1\");\n"
     },
     "security": {
         "issues": [
@@ -42,12 +35,59 @@
         },
         "score": 0.9
     },
-    "overall_score": 85.67,
+    "meta_file": "Tests/3_gpt.c",
+    "performance": {
+        "score": 1.0,
+        "details": []
+    },
+    "runtime": {
+        "compiled": false,
+        "loaded": false,
+        "unloaded": false,
+        "dmesg_success": false,
+        "runtime_notes": "Build failed: warning: the compiler differs from the one used to build the kernel\n  The kernel was built by: x86_64-linux-gnu-gcc-13 (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0\n  You are using:           gcc-13 (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0\n/workspaces/Linux-Driver-Code-Grader/Tests/3_gpt.c:23:10: fatal error: linux/genhd.h: No such file or directory\n   23 | #include <linux/genhd.h>\n      |          ^~~~~~~~~~~~~~~\ncompilation terminated.\nmake[3]: *** [scripts/Makefile.build:243: /workspaces/Linux-Driver-Code-Grader/Tests/3_gpt.o] Error 1\nmake[2]: *** [/usr/src/linux-headers-6.8.0-1030-azure/Makefile:1925: /workspaces/Linux-Driver-Code-Grader/Tests] Error 2\nmake[1]: *** [Makefile:240: __sub-make] Error 2",
+        "dynamic": {}
+    },
+    "overall_score": 89.93,
     "breakdown": {
-        "Correctness": 40.0,
-        "Security": 22.5,
-        "Code Quality": 18.166666666666668,
-        "Performance": 5,
-        "Advanced": 0
+        "Correctness": {
+            "awarded": 40.0,
+            "max": 40.0,
+            "details": [
+                "Compilation: success (method=gcc-fallback)",
+                "Soft pass: missing kernel headers only",
+                "Functionality score: 1.00 -> 10.00/10",
+                "Runtime score: 0.0/10 (failed to load, notes: Build failed: warning: the compiler differs from the one used to build the kernel\n  The kernel was built by: x86_64-linux-gnu-gcc-13 (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0\n  You are using:           gcc-13 (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0\n/workspaces/Linux-Driver-Code-Grader/Tests/3_gpt.c:23:10: fatal error: linux/genhd.h: No such file or directory\n   23 | #include <linux/genhd.h>\n      |          ^~~~~~~~~~~~~~~\ncompilation terminated.\nmake[3]: *** [scripts/Makefile.build:243: /workspaces/Linux-Driver-Code-Grader/Tests/3_gpt.o] Error 1\nmake[2]: *** [/usr/src/linux-headers-6.8.0-1030-azure/Makefile:1925: /workspaces/Linux-Driver-Code-Grader/Tests] Error 2\nmake[1]: *** [Makefile:240: __sub-make] Error 2)"
+            ]
+        },
+        "Security": {
+            "awarded": 22.5,
+            "max": 25.0,
+            "details": [
+                "sub_scores: {'memory_safety': 1.0, 'resource_mgmt': 1.0, 'race_conditions': 0.6, 'input_validation': 1.0}",
+                "issues: ['spinlock_not_unlocked']"
+            ]
+        },
+        "Code Quality": {
+            "awarded": 17.43,
+            "max": 20.0,
+            "details": [
+                {
+                    "style_score": 0.98,
+                    "documentation_score": 0.6,
+                    "maintainability_score": 0.998
+                }
+            ]
+        },
+        "Performance": {
+            "awarded": 10.0,
+            "max": 10.0,
+            "details": []
+        },
+        "Advanced": {
+            "awarded": 0.0,
+            "max": 5.0,
+            "details": []
+        }
     }
 }

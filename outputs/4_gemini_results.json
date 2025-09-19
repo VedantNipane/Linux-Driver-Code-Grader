@@ -1,34 +1,26 @@
 {
     "compilation": {
-        "success": true,
+        "success": false,
+        "method": "kbuild",
+        "output": "make[1]: Entering directory '/usr/src/linux-headers-6.8.0-1030-azure'\n  CC [M]  /tmp/evaluator_kbuild_3osufmuj/4_gemini.o\nmake[1]: Leaving directory '/usr/src/linux-headers-6.8.0-1030-azure'\nwarning: the compiler differs from the one used to build the kernel\n  The kernel was built by: x86_64-linux-gnu-gcc-13 (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0\n  You are using:           gcc-13 (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0\n/tmp/evaluator_kbuild_3osufmuj/4_gemini.c: In function \u2018simple_net_setup\u2019:\n/tmp/evaluator_kbuild_3osufmuj/4_gemini.c:79:17: error: \u2018ARPHRD_ETHER\u2019 undeclared (first use in this function)\n   79 |     dev->type = ARPHRD_ETHER;\n      |                 ^~~~~~~~~~~~\n/tmp/evaluator_kbuild_3osufmuj/4_gemini.c:79:17: note: each undeclared identifier is reported only once for each function it appears in\nmake[3]: *** [scripts/Makefile.build:243: /tmp/evaluator_kbuild_3osufmuj/4_gemini.o] Error 1\nmake[2]: *** [/usr/src/linux-headers-6.8.0-1030-azure/Makefile:1925: /tmp/evaluator_kbuild_3osufmuj] Error 2\nmake[1]: *** [Makefile:240: __sub-make] Error 2\n",
         "errors": 1,
-        "warnings": 0,
-        "output": "Tests/4_gemini.c:3:10: fatal error: linux/init.h: No such file or directory\n    3 | #include <linux/init.h>\n      |          ^~~~~~~~~~~~~~\ncompilation terminated.\n",
-        "note": "Soft pass: missing kernel headers only"
+        "warnings": 1
     },
     "structure": {
         "module_init": true,
         "module_exit": true,
         "function_count": 4,
-        "score": 1.0
+        "avg_func_len": 20.25,
+        "driver_type": "net",
+        "functionality_score": 1.0,
+        "fops_present": []
     },
     "style": {
-        "checks": {
-            "includes": 1.0,
-            "metadata": 1.0,
-            "core_functions": 1.0,
-            "device_operations": 0.0,
-            "error_handling": 0.5
-        },
-        "score": 0.75,
-        "function_count": 0,
-        "details": {
-            "includes_found": 3,
-            "metadata_found": 3.0,
-            "core_functions_found": 2.0,
-            "device_ops_found": 0,
-            "error_handling_indicators": 2.0
-        }
+        "violations": 9,
+        "style_score": 0.91,
+        "documentation_score": 0.5,
+        "maintainability_score": 0.9595,
+        "output": "#include <linux/module.h>\n#include <linux/kernel.h>\n#include <linux/init.h>\n#include <linux/netdevice.h>\n#include <linux/etherdevice.h>\n#include <linux/skbuff.h>\n#include <linux/vmalloc.h>\n\n// Module information\nMODULE_LICENSE(\"GPL\");\nMODULE_AUTHOR(\"Your Name\");\nMODULE_DESCRIPTION(\"A simple virtual network device driver.\");\nMODULE_VERSION(\"1.0\");\n\n// A structure to hold our device-specific data\nstruct net_private_data {\n    struct net_device_stats stats;\n    spinlock_t lock;\n};\n\n// Transmit function: sends a packet out\nstatic netdev_tx_t simple_net_xmit(struct sk_buff *skb, struct net_device *dev) {\n    struct net_private_data *priv = netdev_priv(dev);\n\n    // Lock the private data for thread-safe access to statistics\n    spin_lock(&priv->lock);\n    \n    // Increment transmit statistics\n    priv->stats.tx_packets++;\n    priv->stats.tx_bytes += skb->len;\n\n    // Simulate sending the packet by simply dropping it.\n    // In a real driver, you would write the packet to hardware.\n    // To simulate a loopback device, you could reinject the packet.\n    printk(KERN_INFO \"simple_net: Transmitting a packet of size %d.\\n\", skb->len);\n\n    // Free the sk_buff\n    dev_kfree_skb(skb);\n\n    // Unlock the private data\n    spin_unlock(&priv->lock);\n\n    return NETDEV_TX_OK;\n}\n\n// Function to get the network statistics\nstatic struct net_device_stats *simple_net_stats(struct net_device *dev) {\n    return &((struct net_private_data *)netdev_priv(dev))->stats;\n}\n\n// Net device operations structure\nstatic const struct net_device_ops simple_net_ops = {\n    .ndo_open = NULL,             // Open function (optional for this simple driver)\n    .ndo_stop = NULL,             // Stop function (optional)\n    .ndo_start_xmit = simple_net_xmit, // Transmit function\n    .ndo_get_stats = simple_net_stats, // Get statistics function\n};\n\n// Initialization function for the network device\nstatic void simple_net_setup(struct net_device *dev) {\n    // Initialize the private data structure\n    struct net_private_data *priv = netdev_priv(dev);\n    memset(priv, 0, sizeof(struct net_private_data));\n    spin_lock_init(&priv->lock);\n\n    // Set the device operations\n    dev->netdev_ops = &simple_net_ops;\n\n    // Assign the Ethernet header size\n    dev->hard_header_len = ETH_HLEN;\n\n    // Set the MTU to the default Ethernet MTU\n    dev->mtu = 1500;\n\n    // Set the device flags\n    dev->flags = IFF_NOARP | IFF_POINTOPOINT;\n\n    // Set the device type\n    dev->type = ARPHRD_ETHER;\n\n    // Assign a default MAC address\n    // This is a dummy address, you could use a hardware-assigned one.\n    eth_hw_addr_set(dev, \"\\x00\\x11\\x22\\x33\\x44\\x55\");\n}\n\n// Device creation function\nstatic struct net_device *simple_net_create(void) {\n    struct net_device *dev;\n\n    // Allocate the net_device structure. `alloc_netdev` is preferred.\n    // The second argument is the size of the private data area.\n    dev = alloc_netdev(sizeof(struct net_private_data), \"veth%d\", NET_NAME_ENUM, simple_net_setup);\n    \n    if (!dev) {\n        printk(KERN_ALERT \"simple_net: Failed to allocate net device.\\n\");\n        return NULL;\n    }\n\n    return dev;\n}\n\nstatic struct net_device *my_net_device;\n\n// Module initialization\nstatic int __init simple_net_init(void) {\n    int result;\n\n    printk(KERN_INFO \"simple_net: Initializing virtual network device driver.\\n\");\n    \n    // Create the network device instance\n    my_net_device = simple_net_create();\n    if (!my_net_device) {\n        return -ENOMEM;\n    }\n\n    // Register the network device with the kernel\n    result = register_netdev(my_net_device);\n    if (result < 0) {\n        printk(KERN_ALERT \"simple_net: Failed to register network device.\\n\");\n        free_netdev(my_net_device);\n        return result;\n    }\n\n    printk(KERN_INFO \"simple_net: Device '%s' registered successfully.\\n\", my_net_device->name);\n    printk(KERN_INFO \"simple_net: To use this device, bring it up with 'sudo ifconfig %s up'.\\n\", my_net_device->name);\n    printk(KERN_INFO \"simple_net: To see packets, use 'tcpdump -i %s'.\\n\", my_net_device->name);\n\n    return 0;\n}\n\n// Module exit\nstatic void __exit simple_net_exit(void) {\n    if (my_net_device) {\n        printk(KERN_INFO \"simple_net: Unregistering and freeing device '%s'.\\n\", my_net_device->name);\n        unregister_netdev(my_net_device);\n        free_netdev(my_net_device);\n    }\n    printk(KERN_INFO \"simple_net: Module exited successfully.\\n\");\n}\n\nmodule_init(simple_net_init);\nmodule_exit(simple_net_exit);\n"
     },
     "security": {
         "issues": [],
@@ -40,12 +32,57 @@
         },
         "score": 1.0
     },
-    "overall_score": 85.0,
+    "meta_file": "Tests/4_gemini.c",
+    "performance": {
+        "score": 1.0,
+        "details": []
+    },
+    "runtime": {
+        "compiled": false,
+        "loaded": false,
+        "unloaded": false,
+        "dmesg_success": false,
+        "runtime_notes": "Build failed: warning: the compiler differs from the one used to build the kernel\n  The kernel was built by: x86_64-linux-gnu-gcc-13 (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0\n  You are using:           gcc-13 (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0\n/workspaces/Linux-Driver-Code-Grader/Tests/4_gemini.c: In function \u2018simple_net_setup\u2019:\n/workspaces/Linux-Driver-Code-Grader/Tests/4_gemini.c:79:17: error: \u2018ARPHRD_ETHER\u2019 undeclared (first use in this function)\n   79 |     dev->type = ARPHRD_ETHER;\n      |                 ^~~~~~~~~~~~\n/workspaces/Linux-Driver-Code-Grader/Tests/4_gemini.c:79:17: note: each undeclared identifier is reported only once for each function it appears in\nmake[3]: *** [scripts/Makefile.build:243: /workspaces/Linux-Driver-Code-Grader/Tests/4_gemini.o] Error 1\nmake[2]: *** [/usr/src/linux-headers-6.8.0-1030-azure/Makefile:1925: /workspaces/Linux-Driver-Code-Grader/Tests] Error 2\nmake[1]: *** [Makefile:240: __sub-make] Error 2",
+        "dynamic": {}
+    },
+    "overall_score": 61.04,
     "breakdown": {
-        "Correctness": 40.0,
-        "Security": 25.0,
-        "Code Quality": 15.0,
-        "Performance": 5,
-        "Advanced": 0
+        "Correctness": {
+            "awarded": 10.0,
+            "max": 40.0,
+            "details": [
+                "Compilation failed",
+                "Functionality score: 1.00 -> 10.00/10",
+                "Runtime score: 0.0/10 (failed to load, notes: Build failed: warning: the compiler differs from the one used to build the kernel\n  The kernel was built by: x86_64-linux-gnu-gcc-13 (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0\n  You are using:           gcc-13 (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0\n/workspaces/Linux-Driver-Code-Grader/Tests/4_gemini.c: In function \u2018simple_net_setup\u2019:\n/workspaces/Linux-Driver-Code-Grader/Tests/4_gemini.c:79:17: error: \u2018ARPHRD_ETHER\u2019 undeclared (first use in this function)\n   79 |     dev->type = ARPHRD_ETHER;\n      |                 ^~~~~~~~~~~~\n/workspaces/Linux-Driver-Code-Grader/Tests/4_gemini.c:79:17: note: each undeclared identifier is reported only once for each function it appears in\nmake[3]: *** [scripts/Makefile.build:243: /workspaces/Linux-Driver-Code-Grader/Tests/4_gemini.o] Error 1\nmake[2]: *** [/usr/src/linux-headers-6.8.0-1030-azure/Makefile:1925: /workspaces/Linux-Driver-Code-Grader/Tests] Error 2\nmake[1]: *** [Makefile:240: __sub-make] Error 2)"
+            ]
+        },
+        "Security": {
+            "awarded": 25.0,
+            "max": 25.0,
+            "details": [
+                "sub_scores: {'memory_safety': 1.0, 'resource_mgmt': 1.0, 'race_conditions': 1.0, 'input_validation': 1.0}"
+            ]
+        },
+        "Code Quality": {
+            "awarded": 16.04,
+            "max": 20.0,
+            "details": [
+                {
+                    "style_score": 0.91,
+                    "documentation_score": 0.5,
+                    "maintainability_score": 0.96
+                }
+            ]
+        },
+        "Performance": {
+            "awarded": 10.0,
+            "max": 10.0,
+            "details": []
+        },
+        "Advanced": {
+            "awarded": 0.0,
+            "max": 5.0,
+            "details": []
+        }
     }
 }

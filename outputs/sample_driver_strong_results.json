@@ -1,11 +1,11 @@
 {
     "compilation": {
         "success": true,
-        "method": "gcc",
-        "output": "Tests/sample_driver_strong.c:4:10: fatal error: linux/uaccess.h: No such file or directory\n    4 | #include <linux/uaccess.h>\n      |          ^~~~~~~~~~~~~~~~~\ncompilation terminated.\n",
-        "errors": 1,
-        "warnings": 0,
-        "note": "Soft pass: missing kernel headers only"
+        "method": "kbuild",
+        "output": "make[1]: Entering directory '/usr/src/linux-headers-6.8.0-1030-azure'\n  CC [M]  /tmp/evaluator_kbuild_ljpnbm5z/sample_driver_strong.o\n  MODPOST /tmp/evaluator_kbuild_ljpnbm5z/Module.symvers\n  CC [M]  /tmp/evaluator_kbuild_ljpnbm5z/sample_driver_strong.mod.o\n  LD [M]  /tmp/evaluator_kbuild_ljpnbm5z/sample_driver_strong.ko\n  BTF [M] /tmp/evaluator_kbuild_ljpnbm5z/sample_driver_strong.ko\nmake[1]: Leaving directory '/usr/src/linux-headers-6.8.0-1030-azure'\nwarning: the compiler differs from the one used to build the kernel\n  The kernel was built by: x86_64-linux-gnu-gcc-13 (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0\n  You are using:           gcc-13 (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0\nSkipping BTF generation for /tmp/evaluator_kbuild_ljpnbm5z/sample_driver_strong.ko due to unavailability of vmlinux\n",
+        "errors": 0,
+        "warnings": 1,
+        "built_module": "sample_driver_strong.ko"
     },
     "structure": {
         "module_init": true,
@@ -15,18 +15,18 @@
         "driver_type": "char",
         "functionality_score": 1.0,
         "fops_present": [
+            "release",
             "open",
             "read",
-            "write",
-            "release"
+            "write"
         ]
     },
     "style": {
-        "violations": 48,
-        "style_score": 0.52,
+        "violations": 3,
+        "style_score": 0.97,
         "documentation_score": 0.5,
         "maintainability_score": 0.998,
-        "output": "WARNING: Missing or malformed SPDX-License-Identifier tag in line 1\n#1: FILE: Tests/sample_driver_strong.c:1:\n+#include <linux/module.h>\n\nWARNING: please, no spaces at the start of a line\n#17: FILE: Tests/sample_driver_strong.c:17:\n+    if (!mutex_trylock(&my_lock))$\n\nERROR: code indent should use tabs where possible\n#18: FILE: Tests/sample_driver_strong.c:18:\n+        return -EBUSY;$\n\nWARNING: please, no spaces at the start of a line\n#18: FILE: Tests/sample_driver_strong.c:18:\n+        return -EBUSY;$\n\nWARNING: please, no spaces at the start of a line\n#19: FILE: Tests/sample_driver_strong.c:19:\n+    printk(KERN_INFO \"Strong driver: opened\\n\");$\n\nWARNING: Prefer [subsystem eg: netdev]_info([subsystem]dev, ... then dev_info(dev, ... then pr_info(...  to printk(KERN_INFO ...\n#19: FILE: Tests/sample_driver_strong.c:19:\n+    printk(KERN_INFO \"Strong driver: opened\\n\");\n\nWARNING: please, no spaces at the start of a line\n#20: FILE: Tests/sample_driver_strong.c:20:\n+    return 0;$\n\nWARNING: please, no spaces at the start of a line\n#25: FILE: Tests/sample_driver_strong.c:25:\n+    int bytes_read;$\n\nWARNING: Missing a blank line after declarations\n#26: FILE: Tests/sample_driver_strong.c:26:\n+    int bytes_read;\n+    if (*offset >= strlen(msg))\n\nWARNING: please, no spaces at the start of a line\n#26: FILE: Tests/sample_driver_strong.c:26:\n+    if (*offset >= strlen(msg))$\n\nERROR: code indent should use tabs where possible\n#27: FILE: Tests/sample_driver_strong.c:27:\n+        return 0;$\n\nWARNING: please, no spaces at the start of a line\n#27: FILE: Tests/sample_driver_strong.c:27:\n+        return 0;$\n\nWARNING: please, no spaces at the start of a line\n#28: FILE: Tests/sample_driver_strong.c:28:\n+    bytes_read = simple_read_from_buffer(buffer, length, offset, msg, strlen(msg));$\n\nWARNING: please, no spaces at the start of a line\n#29: FILE: Tests/sample_driver_strong.c:29:\n+    return bytes_read;$\n\nWARNING: please, no spaces at the start of a line\n#34: FILE: Tests/sample_driver_strong.c:34:\n+    if (len > BUF_LEN - 1)$\n\nERROR: code indent should use tabs where possible\n#35: FILE: Tests/sample_driver_strong.c:35:\n+        return -EINVAL;$\n\nWARNING: please, no spaces at the start of a line\n#35: FILE: Tests/sample_driver_strong.c:35:\n+        return -EINVAL;$\n\nWARNING: please, no spaces at the start of a line\n#36: FILE: Tests/sample_driver_strong.c:36:\n+    if (copy_from_user(msg, buff, len))$\n\nERROR: code indent should use tabs where possible\n#37: FILE: Tests/sample_driver_strong.c:37:\n+        return -EFAULT;$\n\nWARNING: please, no spaces at the start of a line\n#37: FILE: Tests/sample_driver_strong.c:37:\n+        return -EFAULT;$\n\nWARNING: please, no spaces at the start of a line\n#38: FILE: Tests/sample_driver_strong.c:38:\n+    msg[len] = '\\0';$\n\nWARNING: please, no spaces at the start of a line\n#39: FILE: Tests/sample_driver_strong.c:39:\n+    return len;$\n\nWARNING: please, no spaces at the start of a line\n#44: FILE: Tests/sample_driver_strong.c:44:\n+    mutex_unlock(&my_lock);$\n\nWARNING: please, no spaces at the start of a line\n#45: FILE: Tests/sample_driver_strong.c:45:\n+    printk(KERN_INFO \"Strong driver: closed\\n\");$\n\nWARNING: Prefer [subsystem eg: netdev]_info([subsystem]dev, ... then dev_info(dev, ... then pr_info(...  to printk(KERN_INFO ...\n#45: FILE: Tests/sample_driver_strong.c:45:\n+    printk(KERN_INFO \"Strong driver: closed\\n\");\n\nWARNING: please, no spaces at the start of a line\n#46: FILE: Tests/sample_driver_strong.c:46:\n+    return 0;$\n\nWARNING: please, no spaces at the start of a line\n#50: FILE: Tests/sample_driver_strong.c:50:\n+    .read = device_read,$\n\nWARNING: please, no spaces at the start of a line\n#51: FILE: Tests/sample_driver_strong.c:51:\n+    .write = device_write,$\n\nWARNING: please, no spaces at the start of a line\n#52: FILE: Tests/sample_driver_strong.c:52:\n+    .open = device_open,$\n\nWARNING: please, no spaces at the start of a line\n#53: FILE: Tests/sample_driver_strong.c:53:\n+    .release = device_release$\n\nWARNING: please, no spaces at the start of a line\n#58: FILE: Tests/sample_driver_strong.c:58:\n+    major = register_chrdev(0, DEVICE_NAME, &fops);$\n\nWARNING: please, no spaces at the start of a line\n#59: FILE: Tests/sample_driver_strong.c:59:\n+    if (major < 0)$\n\nERROR: code indent should use tabs where possible\n#60: FILE: Tests/sample_driver_strong.c:60:\n+        return major;$\n\nWARNING: please, no spaces at the start of a line\n#60: FILE: Tests/sample_driver_strong.c:60:\n+        return major;$\n\nWARNING: please, no spaces at the start of a line\n#61: FILE: Tests/sample_driver_strong.c:61:\n+    msg = kmalloc(BUF_LEN, GFP_KERNEL);$\n\nWARNING: please, no spaces at the start of a line\n#62: FILE: Tests/sample_driver_strong.c:62:\n+    if (!msg)$\n\nERROR: code indent should use tabs where possible\n#63: FILE: Tests/sample_driver_strong.c:63:\n+        return -ENOMEM;$\n\nWARNING: please, no spaces at the start of a line\n#63: FILE: Tests/sample_driver_strong.c:63:\n+        return -ENOMEM;$\n\nWARNING: please, no spaces at the start of a line\n#64: FILE: Tests/sample_driver_strong.c:64:\n+    printk(KERN_INFO \"Strong driver loaded with major %d\\n\", major);$\n\nWARNING: Prefer [subsystem eg: netdev]_info([subsystem]dev, ... then dev_info(dev, ... then pr_info(...  to printk(KERN_INFO ...\n#64: FILE: Tests/sample_driver_strong.c:64:\n+    printk(KERN_INFO \"Strong driver loaded with major %d\\n\", major);\n\nWARNING: please, no spaces at the start of a line\n#65: FILE: Tests/sample_driver_strong.c:65:\n+    return 0;$\n\nWARNING: please, no spaces at the start of a line\n#70: FILE: Tests/sample_driver_strong.c:70:\n+    unregister_chrdev(major, DEVICE_NAME);$\n\nWARNING: please, no spaces at the start of a line\n#71: FILE: Tests/sample_driver_strong.c:71:\n+    kfree(msg);$\n\nWARNING: please, no spaces at the start of a line\n#72: FILE: Tests/sample_driver_strong.c:72:\n+    printk(KERN_INFO \"Strong driver unloaded\\n\");$\n\nWARNING: Prefer [subsystem eg: netdev]_info([subsystem]dev, ... then dev_info(dev, ... then pr_info(...  to printk(KERN_INFO ...\n#72: FILE: Tests/sample_driver_strong.c:72:\n+    printk(KERN_INFO \"Strong driver unloaded\\n\");\n\ntotal: 6 errors, 39 warnings, 80 lines checked\n\nNOTE: For some of the reported defects, checkpatch may be able to\n      mechanically convert to the typical style using --fix or --fix-inplace.\n\nNOTE: Whitespace errors detected.\n      You may wish to use scripts/cleanpatch or scripts/cleanfile\n\nTests/sample_driver_strong.c has style problems, please review.\n\nNOTE: If any of the errors are false positives, please report\n      them to the maintainer, see CHECKPATCH in MAINTAINERS.\n"
+        "output": "#include <linux/module.h>\n#include <linux/kernel.h>\n#include <linux/fs.h>\n#include <linux/uaccess.h>\n#include <linux/slab.h>\n#include <linux/mutex.h>\n\n#define DEVICE_NAME \"strong\"\n#define BUF_LEN 256\n\nstatic char *msg;\nstatic int major;\nstatic DEFINE_MUTEX(my_lock);\n\nstatic int device_open(struct inode *inode, struct file *file)\n{\n    if (!mutex_trylock(&my_lock))\n        return -EBUSY;\n    printk(KERN_INFO \"Strong driver: opened\\n\");\n    return 0;\n}\n\nstatic ssize_t device_read(struct file *filp, char __user *buffer, size_t length, loff_t *offset)\n{\n    int bytes_read;\n    if (*offset >= strlen(msg))\n        return 0;\n    bytes_read = simple_read_from_buffer(buffer, length, offset, msg, strlen(msg));\n    return bytes_read;\n}\n\nstatic ssize_t device_write(struct file *filp, const char __user *buff, size_t len, loff_t *off)\n{\n    if (len > BUF_LEN - 1)\n        return -EINVAL;\n    if (copy_from_user(msg, buff, len))\n        return -EFAULT;\n    msg[len] = '\\0';\n    return len;\n}\n\nstatic int device_release(struct inode *inode, struct file *file)\n{\n    mutex_unlock(&my_lock);\n    printk(KERN_INFO \"Strong driver: closed\\n\");\n    return 0;\n}\n\nstatic struct file_operations fops = {\n    .read = device_read,\n    .write = device_write,\n    .open = device_open,\n    .release = device_release\n};\n\nstatic int __init strong_init(void)\n{\n    major = register_chrdev(0, DEVICE_NAME, &fops);\n    if (major < 0)\n        return major;\n    msg = kmalloc(BUF_LEN, GFP_KERNEL);\n    if (!msg)\n        return -ENOMEM;\n    printk(KERN_INFO \"Strong driver loaded with major %d\\n\", major);\n    return 0;\n}\n\nstatic void __exit strong_exit(void)\n{\n    unregister_chrdev(major, DEVICE_NAME);\n    kfree(msg);\n    printk(KERN_INFO \"Strong driver unloaded\\n\");\n}\n\nmodule_init(strong_init);\nmodule_exit(strong_exit);\n\nMODULE_LICENSE(\"GPL\");\nMODULE_DESCRIPTION(\"Well-Written Driver Example\");\nMODULE_AUTHOR(\"Evaluator\");\n"
     },
     "security": {
         "issues": [],
@@ -39,15 +39,35 @@
         "score": 1.0
     },
     "meta_file": "Tests/sample_driver_strong.c",
-    "overall_score": 88.15,
+    "performance": {
+        "score": 1.0,
+        "details": []
+    },
+    "runtime": {
+        "compiled": true,
+        "loaded": true,
+        "unloaded": true,
+        "dmesg_success": false,
+        "runtime_notes": "",
+        "dynamic": {
+            "device_found": false,
+            "io_success": false,
+            "concurrency_success": false,
+            "stress_success": false,
+            "notes": [
+                "No device node found under /dev/ or /proc/devices"
+            ]
+        }
+    },
+    "overall_score": 91.75,
     "breakdown": {
         "Correctness": {
             "awarded": 40.0,
             "max": 40.0,
             "details": [
-                "Compilation: success (method=gcc)",
-                "Soft pass: missing kernel headers only",
-                "Functionality score: 1.00 -> 10.00/10"
+                "Compilation: success (method=kbuild)",
+                "Functionality score: 1.00 -> 10.00/10",
+                "Runtime score: 8.0/10 (compiled OK (+2), loaded OK (+4), unloaded OK (+2))"
             ]
         },
         "Security": {
@@ -58,11 +78,11 @@
             ]
         },
         "Code Quality": {
-            "awarded": 13.15,
+            "awarded": 16.75,
             "max": 20.0,
             "details": [
                 {
-                    "style_score": 0.52,
+                    "style_score": 0.97,
                     "documentation_score": 0.5,
                     "maintainability_score": 0.998
                 }
@@ -71,9 +91,7 @@
         "Performance": {
             "awarded": 10.0,
             "max": 10.0,
-            "details": [
-                "avg_func_len: 1.0"
-            ]
+            "details": []
         },
         "Advanced": {
             "awarded": 0.0,

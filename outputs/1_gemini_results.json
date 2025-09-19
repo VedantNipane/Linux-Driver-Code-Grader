@@ -1,34 +1,31 @@
 {
     "compilation": {
-        "success": true,
-        "errors": 1,
-        "warnings": 0,
-        "output": "Tests/1_gemini.c:1:10: fatal error: linux/init.h: No such file or directory\n    1 | #include <linux/init.h>\n      |          ^~~~~~~~~~~~~~\ncompilation terminated.\n",
-        "note": "Soft pass: missing kernel headers only"
+        "success": false,
+        "method": "kbuild",
+        "output": "make[1]: Entering directory '/usr/src/linux-headers-6.8.0-1030-azure'\n  CC [M]  /tmp/evaluator_kbuild_zlsfjvze/1_gemini.o\nmake[1]: Leaving directory '/usr/src/linux-headers-6.8.0-1030-azure'\nwarning: the compiler differs from the one used to build the kernel\n  The kernel was built by: x86_64-linux-gnu-gcc-13 (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0\n  You are using:           gcc-13 (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0\nIn file included from /tmp/evaluator_kbuild_zlsfjvze/1_gemini.c:1:\n/tmp/evaluator_kbuild_zlsfjvze/1_gemini.c: In function \u2018simple_char_init\u2019:\n./include/linux/init.h:188:22: error: passing argument 1 of \u2018class_create\u2019 from incompatible pointer type [-Werror=incompatible-pointer-types]\n  188 | #define THIS_MODULE (&__this_module)\n      |                     ~^~~~~~~~~~~~~~~\n      |                      |\n      |                      struct module *\n/tmp/evaluator_kbuild_zlsfjvze/1_gemini.c:106:38: note: in expansion of macro \u2018THIS_MODULE\u2019\n  106 |     simple_char_class = class_create(THIS_MODULE, CLASS_NAME);\n      |                                      ^~~~~~~~~~~\nIn file included from ./include/linux/device.h:31,\n                 from ./include/linux/cdev.h:8,\n                 from /tmp/evaluator_kbuild_zlsfjvze/1_gemini.c:6:\n./include/linux/device/class.h:228:54: note: expected \u2018const char *\u2019 but argument is of type \u2018struct module *\u2019\n  228 | struct class * __must_check class_create(const char *name);\n      |                                          ~~~~~~~~~~~~^~~~\n/tmp/evaluator_kbuild_zlsfjvze/1_gemini.c:106:25: error: too many arguments to function \u2018class_create\u2019\n  106 |     simple_char_class = class_create(THIS_MODULE, CLASS_NAME);\n      |                         ^~~~~~~~~~~~\n./include/linux/device/class.h:228:29: note: declared here\n  228 | struct class * __must_check class_create(const char *name);\n      |                             ^~~~~~~~~~~~\ncc1: some warnings being treated as errors\nmake[3]: *** [scripts/Makefile.build:243: /tmp/evaluator_kbuild_zlsfjvze/1_gemini.o] Error 1\nmake[2]: *** [/usr/src/linux-headers-6.8.0-1030-azure/Makefile:1925: /tmp/evaluator_kbuild_zlsfjvze] Error 2\nmake[1]: *** [Makefile:240: __sub-make] Error 2\n",
+        "errors": 2,
+        "warnings": 1
     },
     "structure": {
         "module_init": true,
         "module_exit": true,
-        "function_count": 9,
-        "score": 1.0
+        "function_count": 6,
+        "avg_func_len": 8.333333333333334,
+        "driver_type": "char",
+        "functionality_score": 1.0,
+        "fops_present": [
+            "release",
+            "read",
+            "write",
+            "open"
+        ]
     },
     "style": {
-        "checks": {
-            "includes": 1.0,
-            "metadata": 1.0,
-            "core_functions": 1.0,
-            "device_operations": 1.0,
-            "error_handling": 0.5
-        },
-        "score": 0.95,
-        "function_count": 0,
-        "details": {
-            "includes_found": 3,
-            "metadata_found": 3.0,
-            "core_functions_found": 2.0,
-            "device_ops_found": 4,
-            "error_handling_indicators": 2.0
-        }
+        "violations": 8,
+        "style_score": 0.92,
+        "documentation_score": 0.5,
+        "maintainability_score": 0.9833333333333333,
+        "output": "#include <linux/init.h>\n#include <linux/module.h>\n#include <linux/kernel.h>\n#include <linux/fs.h>\n#include <linux/uaccess.h>\n#include <linux/cdev.h>\n\n#define DEVICE_NAME \"simple_char_dev\"\n#define CLASS_NAME \"simple_char_class\"\n#define BUFFER_SIZE 1024\n\n// Module information\nMODULE_LICENSE(\"GPL\");\nMODULE_AUTHOR(\"Your Name\");\nMODULE_DESCRIPTION(\"A simple character device driver with read/write support.\");\nMODULE_VERSION(\"1.0\");\n\n// Global variables\nstatic int major_number;\nstatic struct class* simple_char_class = NULL;\nstatic struct device* simple_char_device = NULL;\nstatic struct cdev simple_char_cdev;\nstatic char device_buffer[BUFFER_SIZE] = {0};\nstatic int buffer_len = 0;\n\n// Device file operations\nstatic int simple_char_open(struct inode *inodep, struct file *filep) {\n    printk(KERN_INFO \"simple_char_dev: Device opened successfully\\n\");\n    return 0;\n}\n\nstatic ssize_t simple_char_read(struct file *filep, char *buffer, size_t len, loff_t *offset) {\n    int bytes_read = 0;\n    \n    // Check if we're at the end of the buffer\n    if (*offset >= buffer_len) {\n        return 0; // End of file\n    }\n\n    // Determine how many bytes to read\n    if (len > buffer_len - *offset) {\n        bytes_read = buffer_len - *offset;\n    } else {\n        bytes_read = len;\n    }\n    \n    // Copy data from kernel space to user space\n    if (copy_to_user(buffer, device_buffer + *offset, bytes_read) != 0) {\n        printk(KERN_ALERT \"simple_char_dev: Failed to copy data to user\\n\");\n        return -EFAULT;\n    }\n\n    *offset += bytes_read;\n    printk(KERN_INFO \"simple_char_dev: Read %d bytes from device\\n\", bytes_read);\n    return bytes_read;\n}\n\nstatic ssize_t simple_char_write(struct file *filep, const char *buffer, size_t len, loff_t *offset) {\n    int bytes_written = 0;\n\n    // Check if the write operation will overflow the buffer\n    if (len > BUFFER_SIZE) {\n        printk(KERN_ALERT \"simple_char_dev: Write operation too large, maximum is %d bytes\\n\", BUFFER_SIZE);\n        return -EMSGSIZE;\n    }\n    \n    // Copy data from user space to kernel space\n    if (copy_from_user(device_buffer, buffer, len) != 0) {\n        printk(KERN_ALERT \"simple_char_dev: Failed to copy data from user\\n\");\n        return -EFAULT;\n    }\n    \n    buffer_len = len;\n    bytes_written = len;\n\n    printk(KERN_INFO \"simple_char_dev: Wrote %d bytes to device\\n\", bytes_written);\n    return bytes_written;\n}\n\nstatic int simple_char_release(struct inode *inodep, struct file *filep) {\n    printk(KERN_INFO \"simple_char_dev: Device successfully closed\\n\");\n    return 0;\n}\n\n// File operations structure\nstatic struct file_operations fops = {\n    .open = simple_char_open,\n    .read = simple_char_read,\n    .write = simple_char_write,\n    .release = simple_char_release,\n};\n\n// Module initialization\nstatic int __init simple_char_init(void) {\n    printk(KERN_INFO \"simple_char_dev: Initializing the character device\\n\");\n    \n    // Dynamically allocate a major number\n    major_number = register_chrdev(0, DEVICE_NAME, &fops);\n    if (major_number < 0) {\n        printk(KERN_ALERT \"simple_char_dev: Failed to register a major number\\n\");\n        return major_number;\n    }\n    printk(KERN_INFO \"simple_char_dev: Registered with major number %d\\n\", major_number);\n    \n    // Register the device class\n    simple_char_class = class_create(THIS_MODULE, CLASS_NAME);\n    if (IS_ERR(simple_char_class)) {\n        unregister_chrdev(major_number, DEVICE_NAME);\n        printk(KERN_ALERT \"simple_char_dev: Failed to register device class\\n\");\n        return PTR_ERR(simple_char_class);\n    }\n    printk(KERN_INFO \"simple_char_dev: Device class registered\\n\");\n\n    // Create the device node\n    simple_char_device = device_create(simple_char_class, NULL, MKDEV(major_number, 0), NULL, DEVICE_NAME);\n    if (IS_ERR(simple_char_device)) {\n        class_destroy(simple_char_class);\n        unregister_chrdev(major_number, DEVICE_NAME);\n        printk(KERN_ALERT \"simple_char_dev: Failed to create the device\\n\");\n        return PTR_ERR(simple_char_device);\n    }\n    printk(KERN_INFO \"simple_char_dev: Device created\\n\");\n    \n    cdev_init(&simple_char_cdev, &fops);\n    cdev_add(&simple_char_cdev, MKDEV(major_number, 0), 1);\n    \n    return 0;\n}\n\n// Module exit\nstatic void __exit simple_char_exit(void) {\n    cdev_del(&simple_char_cdev);\n    device_destroy(simple_char_class, MKDEV(major_number, 0));\n    class_unregister(simple_char_class);\n    class_destroy(simple_char_class);\n    unregister_chrdev(major_number, DEVICE_NAME);\n    printk(KERN_INFO \"simple_char_dev: Module exited successfully\\n\");\n}\n\nmodule_init(simple_char_init);\nmodule_exit(simple_char_exit);"
     },
     "security": {
         "issues": [
@@ -42,12 +39,58 @@
         },
         "score": 0.925
     },
-    "overall_score": 87.12,
+    "meta_file": "Tests/1_gemini.c",
+    "performance": {
+        "score": 1.0,
+        "details": []
+    },
+    "runtime": {
+        "compiled": false,
+        "loaded": false,
+        "unloaded": false,
+        "dmesg_success": false,
+        "runtime_notes": "Build failed: warning: the compiler differs from the one used to build the kernel\n  The kernel was built by: x86_64-linux-gnu-gcc-13 (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0\n  You are using:           gcc-13 (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0\nIn file included from /workspaces/Linux-Driver-Code-Grader/Tests/1_gemini.c:1:\n/workspaces/Linux-Driver-Code-Grader/Tests/1_gemini.c: In function \u2018simple_char_init\u2019:\n./include/linux/init.h:188:22: error: passing argument 1 of \u2018class_create\u2019 from incompatible pointer type [-Werror=incompatible-pointer-types]\n  188 | #define THIS_MODULE (&__this_module)\n      |                     ~^~~~~~~~~~~~~~~\n      |                      |\n      |                      struct module *\n/workspaces/Linux-Driver-Code-Grader/Tests/1_gemini.c:106:38: note: in expansion of macro \u2018THIS_MODULE\u2019\n  106 |     simple_char_class = class_create(THIS_MODULE, CLASS_NAME);\n      |                                      ^~~~~~~~~~~\nIn file included from ./include/linux/device.h:31,\n                 from ./include/linux/cdev.h:8,\n                 from /workspaces/Linux-Driver-Code-Grader/Tests/1_gemini.c:6:\n./include/linux/device/class.h:228:54: note: expected \u2018const char *\u2019 but argument is of type \u2018struct module *\u2019\n  228 | struct class * __must_check class_create(const char *name);\n      |                                          ~~~~~~~~~~~~^~~~\n/workspaces/Linux-Driver-Code-Grader/Tests/1_gemini.c:106:25: error: too many arguments to function \u2018class_create\u2019\n  106 |     simple_char_class = class_create(THIS_MODULE, CLASS_NAME);\n      |                         ^~~~~~~~~~~~\n./include/linux/device/class.h:228:29: note: declared here\n  228 | struct class * __must_check class_create(const char *name);\n      |                             ^~~~~~~~~~~~\ncc1: some warnings being treated as errors\nmake[3]: *** [scripts/Makefile.build:243: /workspaces/Linux-Driver-Code-Grader/Tests/1_gemini.o] Error 1\nmake[2]: *** [/usr/src/linux-headers-6.8.0-1030-azure/Makefile:1925: /workspaces/Linux-Driver-Code-Grader/Tests] Error 2\nmake[1]: *** [Makefile:240: __sub-make] Error 2",
+        "dynamic": {}
+    },
+    "overall_score": 59.38,
     "breakdown": {
-        "Correctness": 40.0,
-        "Security": 23.125,
-        "Code Quality": 19.0,
-        "Performance": 5,
-        "Advanced": 0
+        "Correctness": {
+            "awarded": 10.0,
+            "max": 40.0,
+            "details": [
+                "Compilation failed",
+                "Functionality score: 1.00 -> 10.00/10",
+                "Runtime score: 0.0/10 (failed to load, notes: Build failed: warning: the compiler differs from the one used to build the kernel\n  The kernel was built by: x86_64-linux-gnu-gcc-13 (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0\n  You are using:           gcc-13 (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0\nIn file included from /workspaces/Linux-Driver-Code-Grader/Tests/1_gemini.c:1:\n/workspaces/Linux-Driver-Code-Grader/Tests/1_gemini.c: In function \u2018simple_char_init\u2019:\n./include/linux/init.h:188:22: error: passing argument 1 of \u2018class_create\u2019 from incompatible pointer type [-Werror=incompatible-pointer-types]\n  188 | #define THIS_MODULE (&__this_module)\n      |                     ~^~~~~~~~~~~~~~~\n      |                      |\n      |                      struct module *\n/workspaces/Linux-Driver-Code-Grader/Tests/1_gemini.c:106:38: note: in expansion of macro \u2018THIS_MODULE\u2019\n  106 |     simple_char_class = class_create(THIS_MODULE, CLASS_NAME);\n      |                                      ^~~~~~~~~~~\nIn file included from ./include/linux/device.h:31,\n                 from ./include/linux/cdev.h:8,\n                 from /workspaces/Linux-Driver-Code-Grader/Tests/1_gemini.c:6:\n./include/linux/device/class.h:228:54: note: expected \u2018const char *\u2019 but argument is of type \u2018struct module *\u2019\n  228 | struct class * __must_check class_create(const char *name);\n      |                                          ~~~~~~~~~~~~^~~~\n/workspaces/Linux-Driver-Code-Grader/Tests/1_gemini.c:106:25: error: too many arguments to function \u2018class_create\u2019\n  106 |     simple_char_class = class_create(THIS_MODULE, CLASS_NAME);\n      |                         ^~~~~~~~~~~~\n./include/linux/device/class.h:228:29: note: declared here\n  228 | struct class * __must_check class_create(const char *name);\n      |                             ^~~~~~~~~~~~\ncc1: some warnings being treated as errors\nmake[3]: *** [scripts/Makefile.build:243: /workspaces/Linux-Driver-Code-Grader/Tests/1_gemini.o] Error 1\nmake[2]: *** [/usr/src/linux-headers-6.8.0-1030-azure/Makefile:1925: /workspaces/Linux-Driver-Code-Grader/Tests] Error 2\nmake[1]: *** [Makefile:240: __sub-make] Error 2)"
+            ]
+        },
+        "Security": {
+            "awarded": 23.12,
+            "max": 25.0,
+            "details": [
+                "sub_scores: {'memory_safety': 1.0, 'resource_mgmt': 1.0, 'race_conditions': 1.0, 'input_validation': 0.7}",
+                "issues: ['copy_to_user_unchecked']"
+            ]
+        },
+        "Code Quality": {
+            "awarded": 16.26,
+            "max": 20.0,
+            "details": [
+                {
+                    "style_score": 0.92,
+                    "documentation_score": 0.5,
+                    "maintainability_score": 0.983
+                }
+            ]
+        },
+        "Performance": {
+            "awarded": 10.0,
+            "max": 10.0,
+            "details": []
+        },
+        "Advanced": {
+            "awarded": 0.0,
+            "max": 5.0,
+            "details": []
+        }
     }
 }

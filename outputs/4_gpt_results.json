@@ -1,34 +1,26 @@
 {
     "compilation": {
-        "success": true,
+        "success": false,
+        "method": "kbuild",
+        "output": "make[1]: Entering directory '/usr/src/linux-headers-6.8.0-1030-azure'\n  CC [M]  /tmp/evaluator_kbuild_yp3xkoc7/4_gpt.o\nmake[1]: Leaving directory '/usr/src/linux-headers-6.8.0-1030-azure'\nwarning: the compiler differs from the one used to build the kernel\n  The kernel was built by: x86_64-linux-gnu-gcc-13 (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0\n  You are using:           gcc-13 (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0\n/tmp/evaluator_kbuild_yp3xkoc7/4_gpt.c:99:22: error: initialization of \u2018struct net_device_stats * (*)(struct net_device *)\u2019 from incompatible pointer type \u2018void (*)(struct net_device *, struct net_device_stats *)\u2019 [-Werror=incompatible-pointer-types]\n   99 |     .ndo_get_stats = vnet_get_stats,\n      |                      ^~~~~~~~~~~~~~\n/tmp/evaluator_kbuild_yp3xkoc7/4_gpt.c:99:22: note: (near initialization for \u2018vnet_netdev_ops.ndo_get_stats\u2019)\ncc1: some warnings being treated as errors\nmake[3]: *** [scripts/Makefile.build:243: /tmp/evaluator_kbuild_yp3xkoc7/4_gpt.o] Error 1\nmake[2]: *** [/usr/src/linux-headers-6.8.0-1030-azure/Makefile:1925: /tmp/evaluator_kbuild_yp3xkoc7] Error 2\nmake[1]: *** [Makefile:240: __sub-make] Error 2\n",
         "errors": 1,
-        "warnings": 0,
-        "output": "Tests/4_gpt.c:21:10: fatal error: linux/etherdevice.h: No such file or directory\n   21 | #include <linux/etherdevice.h>\n      |          ^~~~~~~~~~~~~~~~~~~~~\ncompilation terminated.\n",
-        "note": "Soft pass: missing kernel headers only"
+        "warnings": 1
     },
     "structure": {
         "module_init": true,
         "module_exit": true,
         "function_count": 7,
-        "score": 1.0
+        "avg_func_len": 1.0,
+        "driver_type": "net",
+        "functionality_score": 1.0,
+        "fops_present": []
     },
     "style": {
-        "checks": {
-            "includes": 1.0,
-            "metadata": 1.0,
-            "core_functions": 1.0,
-            "device_operations": 0.0,
-            "error_handling": 0.5
-        },
-        "score": 0.75,
-        "function_count": 0,
-        "details": {
-            "includes_found": 3,
-            "metadata_found": 3.0,
-            "core_functions_found": 2.0,
-            "device_ops_found": 0,
-            "error_handling_indicators": 2.0
-        }
+        "violations": 3,
+        "style_score": 0.97,
+        "documentation_score": 0.6,
+        "maintainability_score": 0.998,
+        "output": "/*\n * vnet_driver.c\n *\n * Minimal virtual Ethernet network device driver.\n * Features:\n *  - network device registration (creates vnet0)\n *  - simple packet transmission (ndo_start_xmit)\n *  - loopback-style reception using netif_rx\n *  - maintains network statistics (tx/rx packets/bytes, errors)\n *  - basic Ethernet frame handling (eth_type_trans)\n *\n * This is a teaching example. It implements a virtual NIC that \"receives\"\n * any packet it transmits by looping it back into the networking stack.\n *\n * Build with provided Makefile, load with insmod. Tested on modern kernels.\n */\n\n#include <linux/module.h>\n#include <linux/kernel.h>\n#include <linux/netdevice.h>\n#include <linux/etherdevice.h>\n#include <linux/skbuff.h>\n#include <linux/init.h>\n#include <linux/if_ether.h>\n#include <linux/if_packet.h>\n#include <linux/errno.h>\n\n#define VNET_NAME \"vnet%d\"\n\nstruct vnet_priv {\n    struct net_device_stats stats;\n    /* any private fields you want (queues, timers, etc.) */\n};\n\nstatic netdev_tx_t vnet_start_xmit(struct sk_buff *skb, struct net_device *dev)\n{\n    struct vnet_priv *priv = netdev_priv(dev);\n    struct sk_buff *rx_skb;\n\n    /* update transmit statistics */\n    priv->stats.tx_packets++;\n    priv->stats.tx_bytes += skb->len;\n\n    /* In a real driver we would hand the skb to hardware. Here we simulate\n     * successful transmission and loop the packet back to the receive path.\n     */\n\n    /* Make a copy for the receive path (netif_rx will free it) */\n    rx_skb = skb_copy(skb, GFP_ATOMIC);\n    if (!rx_skb) {\n        priv->stats.tx_errors++;\n        dev_kfree_skb(skb);\n        return NETDEV_TX_OK;\n    }\n\n    /* prepare rx_skb to look like a received frame */\n    rx_skb->dev = dev;\n    rx_skb->protocol = eth_type_trans(rx_skb, dev);\n    rx_skb->ip_summed = CHECKSUM_UNNECESSARY;\n\n    /* update rx stats */\n    priv->stats.rx_packets++;\n    priv->stats.rx_bytes += rx_skb->len;\n\n    /* push into networking stack */\n    netif_rx(rx_skb);\n\n    /* free the original skb that was \"transmitted\" */\n    dev_kfree_skb(skb);\n\n    /* notify kernel that driver handled it */\n    return NETDEV_TX_OK;\n}\n\nstatic int vnet_open(struct net_device *dev)\n{\n    netif_start_queue(dev);\n    pr_info(\"%s: device opened\\n\", dev->name);\n    return 0;\n}\n\nstatic int vnet_stop(struct net_device *dev)\n{\n    netif_stop_queue(dev);\n    pr_info(\"%s: device stopped\\n\", dev->name);\n    return 0;\n}\n\nstatic void vnet_get_stats(struct net_device *dev, struct net_device_stats *stats)\n{\n    struct vnet_priv *priv = netdev_priv(dev);\n    *stats = priv->stats;\n}\n\nstatic const struct net_device_ops vnet_netdev_ops = {\n    .ndo_open = vnet_open,\n    .ndo_stop = vnet_stop,\n    .ndo_start_xmit = vnet_start_xmit,\n    .ndo_get_stats = vnet_get_stats,\n};\n\nstatic void vnet_setup(struct net_device *dev)\n{\n    ether_setup(dev); /* sets up ethernet-like fields */\n    dev->netdev_ops = &vnet_netdev_ops;\n    dev->flags |= IFF_NOARP;\n    dev->features |= NETIF_F_HW_CSUM; /* advertise checksum offload (simulated) */\n\n    /* set a MAC address: locally administered */\n    eth_hw_addr_random(dev);\n\n    dev->mtu = ETH_DATA_LEN;\n}\n\nstatic struct net_device *vnet_dev;\n\nstatic int __init vnet_init(void)\n{\n    int ret;\n    struct vnet_priv *priv;\n\n    vnet_dev = alloc_netdev(sizeof(struct vnet_priv), VNET_NAME, NET_NAME_UNKNOWN, vnet_setup);\n    if (!vnet_dev)\n        return -ENOMEM;\n\n    priv = netdev_priv(vnet_dev);\n    memset(priv, 0, sizeof(*priv));\n\n    /* register the device */\n    ret = register_netdev(vnet_dev);\n    if (ret) {\n        pr_err(\"vnet: failed to register net device: %d\\n\", ret);\n        free_netdev(vnet_dev);\n        return ret;\n    }\n\n    pr_info(\"vnet: loaded, device=%s\\n\", vnet_dev->name);\n    return 0;\n}\n\nstatic void __exit vnet_exit(void)\n{\n    if (!vnet_dev)\n        return;\n\n    unregister_netdev(vnet_dev);\n    free_netdev(vnet_dev);\n    pr_info(\"vnet: unloaded\\n\");\n}\n\nmodule_init(vnet_init);\nmodule_exit(vnet_exit);\n\nMODULE_LICENSE(\"GPL\");\nMODULE_AUTHOR(\"ChatGPT\");\nMODULE_DESCRIPTION(\"Virtual Ethernet network device (loopback-style) example\");\nMODULE_VERSION(\"0.1\");\n"
     },
     "security": {
         "issues": [],
@@ -40,12 +32,57 @@
         },
         "score": 1.0
     },
-    "overall_score": 85.0,
+    "meta_file": "Tests/4_gpt.c",
+    "performance": {
+        "score": 1.0,
+        "details": []
+    },
+    "runtime": {
+        "compiled": false,
+        "loaded": false,
+        "unloaded": false,
+        "dmesg_success": false,
+        "runtime_notes": "Build failed: warning: the compiler differs from the one used to build the kernel\n  The kernel was built by: x86_64-linux-gnu-gcc-13 (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0\n  You are using:           gcc-13 (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0\n/workspaces/Linux-Driver-Code-Grader/Tests/4_gpt.c:99:22: error: initialization of \u2018struct net_device_stats * (*)(struct net_device *)\u2019 from incompatible pointer type \u2018void (*)(struct net_device *, struct net_device_stats *)\u2019 [-Werror=incompatible-pointer-types]\n   99 |     .ndo_get_stats = vnet_get_stats,\n      |                      ^~~~~~~~~~~~~~\n/workspaces/Linux-Driver-Code-Grader/Tests/4_gpt.c:99:22: note: (near initialization for \u2018vnet_netdev_ops.ndo_get_stats\u2019)\ncc1: some warnings being treated as errors\nmake[3]: *** [scripts/Makefile.build:243: /workspaces/Linux-Driver-Code-Grader/Tests/4_gpt.o] Error 1\nmake[2]: *** [/usr/src/linux-headers-6.8.0-1030-azure/Makefile:1925: /workspaces/Linux-Driver-Code-Grader/Tests] Error 2\nmake[1]: *** [Makefile:240: __sub-make] Error 2",
+        "dynamic": {}
+    },
+    "overall_score": 62.35,
     "breakdown": {
-        "Correctness": 40.0,
-        "Security": 25.0,
-        "Code Quality": 15.0,
-        "Performance": 5,
-        "Advanced": 0
+        "Correctness": {
+            "awarded": 10.0,
+            "max": 40.0,
+            "details": [
+                "Compilation failed",
+                "Functionality score: 1.00 -> 10.00/10",
+                "Runtime score: 0.0/10 (failed to load, notes: Build failed: warning: the compiler differs from the one used to build the kernel\n  The kernel was built by: x86_64-linux-gnu-gcc-13 (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0\n  You are using:           gcc-13 (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0\n/workspaces/Linux-Driver-Code-Grader/Tests/4_gpt.c:99:22: error: initialization of \u2018struct net_device_stats * (*)(struct net_device *)\u2019 from incompatible pointer type \u2018void (*)(struct net_device *, struct net_device_stats *)\u2019 [-Werror=incompatible-pointer-types]\n   99 |     .ndo_get_stats = vnet_get_stats,\n      |                      ^~~~~~~~~~~~~~\n/workspaces/Linux-Driver-Code-Grader/Tests/4_gpt.c:99:22: note: (near initialization for \u2018vnet_netdev_ops.ndo_get_stats\u2019)\ncc1: some warnings being treated as errors\nmake[3]: *** [scripts/Makefile.build:243: /workspaces/Linux-Driver-Code-Grader/Tests/4_gpt.o] Error 1\nmake[2]: *** [/usr/src/linux-headers-6.8.0-1030-azure/Makefile:1925: /workspaces/Linux-Driver-Code-Grader/Tests] Error 2\nmake[1]: *** [Makefile:240: __sub-make] Error 2)"
+            ]
+        },
+        "Security": {
+            "awarded": 25.0,
+            "max": 25.0,
+            "details": [
+                "sub_scores: {'memory_safety': 1.0, 'resource_mgmt': 1.0, 'race_conditions': 1.0, 'input_validation': 1.0}"
+            ]
+        },
+        "Code Quality": {
+            "awarded": 17.35,
+            "max": 20.0,
+            "details": [
+                {
+                    "style_score": 0.97,
+                    "documentation_score": 0.6,
+                    "maintainability_score": 0.998
+                }
+            ]
+        },
+        "Performance": {
+            "awarded": 10.0,
+            "max": 10.0,
+            "details": []
+        },
+        "Advanced": {
+            "awarded": 0.0,
+            "max": 5.0,
+            "details": []
+        }
     }
 }

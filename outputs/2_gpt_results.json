@@ -1,34 +1,31 @@
 {
     "compilation": {
-        "success": true,
-        "errors": 1,
-        "warnings": 0,
-        "output": "Tests/2_gpt.c:22:10: fatal error: linux/init.h: No such file or directory\n   22 | #include <linux/init.h>\n      |          ^~~~~~~~~~~~~~\ncompilation terminated.\n",
-        "note": "Soft pass: missing kernel headers only"
+        "success": false,
+        "method": "kbuild",
+        "output": "make[1]: Entering directory '/usr/src/linux-headers-6.8.0-1030-azure'\n  CC [M]  /tmp/evaluator_kbuild_jd4m4jrl/2_gpt.o\nmake[1]: Leaving directory '/usr/src/linux-headers-6.8.0-1030-azure'\nwarning: the compiler differs from the one used to build the kernel\n  The kernel was built by: x86_64-linux-gnu-gcc-13 (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0\n  You are using:           gcc-13 (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0\nIn file included from ./arch/x86/include/asm/mem_encrypt.h:15,\n                 from ./include/linux/mem_encrypt.h:17,\n                 from ./arch/x86/include/asm/processor-flags.h:6,\n                 from ./arch/x86/include/asm/processor.h:5,\n                 from ./arch/x86/include/asm/timex.h:5,\n                 from ./include/linux/timex.h:67,\n                 from ./include/linux/time32.h:13,\n                 from ./include/linux/time.h:60,\n                 from ./include/linux/stat.h:19,\n                 from ./include/linux/module.h:13,\n                 from /tmp/evaluator_kbuild_jd4m4jrl/2_gpt.c:21:\n/tmp/evaluator_kbuild_jd4m4jrl/2_gpt.c: In function \u2018chdev_init\u2019:\n./include/linux/init.h:188:22: error: passing argument 1 of \u2018class_create\u2019 from incompatible pointer type [-Werror=incompatible-pointer-types]\n  188 | #define THIS_MODULE (&__this_module)\n      |                     ~^~~~~~~~~~~~~~~\n      |                      |\n      |                      struct module *\n/tmp/evaluator_kbuild_jd4m4jrl/2_gpt.c:314:32: note: in expansion of macro \u2018THIS_MODULE\u2019\n  314 |     chdev_class = class_create(THIS_MODULE, CLASS_NAME);\n      |                                ^~~~~~~~~~~\nIn file included from ./include/linux/device.h:31,\n                 from ./include/linux/cdev.h:8,\n                 from /tmp/evaluator_kbuild_jd4m4jrl/2_gpt.c:24:\n./include/linux/device/class.h:228:54: note: expected \u2018const char *\u2019 but argument is of type \u2018struct module *\u2019\n  228 | struct class * __must_check class_create(const char *name);\n      |                                          ~~~~~~~~~~~~^~~~\n/tmp/evaluator_kbuild_jd4m4jrl/2_gpt.c:314:19: error: too many arguments to function \u2018class_create\u2019\n  314 |     chdev_class = class_create(THIS_MODULE, CLASS_NAME);\n      |                   ^~~~~~~~~~~~\n./include/linux/device/class.h:228:29: note: declared here\n  228 | struct class * __must_check class_create(const char *name);\n      |                             ^~~~~~~~~~~~\n/tmp/evaluator_kbuild_jd4m4jrl/2_gpt.c: At top level:\n/tmp/evaluator_kbuild_jd4m4jrl/2_gpt.c:59:23: warning: \u2018chdev_device\u2019 defined but not used [-Wunused-variable]\n   59 | static struct device *chdev_device;\n      |                       ^~~~~~~~~~~~\ncc1: some warnings being treated as errors\nmake[3]: *** [scripts/Makefile.build:243: /tmp/evaluator_kbuild_jd4m4jrl/2_gpt.o] Error 1\nmake[2]: *** [/usr/src/linux-headers-6.8.0-1030-azure/Makefile:1925: /tmp/evaluator_kbuild_jd4m4jrl] Error 2\nmake[1]: *** [Makefile:240: __sub-make] Error 2\n",
+        "errors": 2,
+        "warnings": 2
     },
     "structure": {
         "module_init": true,
         "module_exit": true,
         "function_count": 9,
-        "score": 1.0
+        "avg_func_len": 1.0,
+        "driver_type": "char",
+        "functionality_score": 1.0,
+        "fops_present": [
+            "write",
+            "release",
+            "read",
+            "open"
+        ]
     },
     "style": {
-        "checks": {
-            "includes": 0.6666666666666666,
-            "metadata": 1.0,
-            "core_functions": 1.0,
-            "device_operations": 1.0,
-            "error_handling": 0.75
-        },
-        "score": 0.9083333333333333,
-        "function_count": 0,
-        "details": {
-            "includes_found": 2,
-            "metadata_found": 3.0,
-            "core_functions_found": 2.0,
-            "device_ops_found": 4,
-            "error_handling_indicators": 3.0
-        }
+        "violations": 12,
+        "style_score": 0.88,
+        "documentation_score": 0.6,
+        "maintainability_score": 0.998,
+        "output": "/*\n * chardev_ioctl_driver.c\n *\n * Simple Linux character device driver with:\n * - read/write operations\n * - IOCTL support for configuration\n * - proper error handling\n * - buffer management using copy_to_user / copy_from_user\n *\n * Build with the provided Makefile and load with insmod.\n *\n * IOCTL commands supported (user-space macros below):\n *  CHDEV_IOC_CLEAR       - clear the internal buffer\n *  CHDEV_IOC_GET_SIZE    - get current buffer size (returns int)\n *  CHDEV_IOC_SET_SIZE    - set buffer size (takes int, limited by MAX_BUFFER_SIZE)\n *  CHDEV_IOC_GET_DATALEN - get number of valid bytes in buffer (returns int)\n *\n * This is for learning/prototyping only.\n */\n\n#include <linux/module.h>\n#include <linux/init.h>\n#include <linux/fs.h>\n#include <linux/cdev.h>\n#include <linux/device.h>\n#include <linux/uaccess.h>\n#include <linux/mutex.h>\n#include <linux/slab.h>\n#include <linux/ioctl.h>\n\n#define DEVICE_NAME \"chdev_ioctl\"\n#define CLASS_NAME  \"chdev\"\n\n#define DEFAULT_BUFFER_SIZE 1024 // 1 KB default\n#define MAX_BUFFER_SIZE     (16 * 1024) // 16 KB max allowed\n\nMODULE_LICENSE(\"GPL\");\nMODULE_AUTHOR(\"ChatGPT\");\nMODULE_DESCRIPTION(\"Character device with IOCTL and safe copy_to_user/copy_from_user\");\nMODULE_VERSION(\"0.2\");\n\n/* IOCTL numbers: use magic 'k' */\n#define CHDEV_IOC_MAGIC  'k'\n#define CHDEV_IOC_CLEAR        _IO(CHDEV_IOC_MAGIC, 0)           /* no args */\n#define CHDEV_IOC_GET_SIZE     _IOR(CHDEV_IOC_MAGIC, 1, int)    /* returns int */\n#define CHDEV_IOC_SET_SIZE     _IOW(CHDEV_IOC_MAGIC, 2, int)    /* takes int */\n#define CHDEV_IOC_GET_DATALEN  _IOR(CHDEV_IOC_MAGIC, 3, int)    /* returns int */\n\nstruct chdev_device {\n    char *buffer;\n    size_t buf_size;   /* current allocated buffer size */\n    size_t data_len;   /* bytes of valid data */\n    struct cdev cdev;\n    struct mutex lock; /* protect buffer and data_len */\n};\n\nstatic dev_t chdev_dev_number;\nstatic struct class *chdev_class;\nstatic struct device *chdev_device;\nstatic struct chdev_device *gdev;\n\n/* forward declarations */\nstatic int chdev_open(struct inode *inode, struct file *file);\nstatic int chdev_release(struct inode *inode, struct file *file);\nstatic ssize_t chdev_read(struct file *file, char __user *buf, size_t count, loff_t *ppos);\nstatic ssize_t chdev_write(struct file *file, const char __user *buf, size_t count, loff_t *ppos);\nstatic long chdev_ioctl(struct file *file, unsigned int cmd, unsigned long arg);\nstatic loff_t chdev_llseek(struct file *file, loff_t offset, int whence);\n\nstatic const struct file_operations chdev_fops = {\n    .owner = THIS_MODULE,\n    .open = chdev_open,\n    .release = chdev_release,\n    .read = chdev_read,\n    .write = chdev_write,\n    .unlocked_ioctl = chdev_ioctl,\n    .llseek = chdev_llseek,\n};\n\nstatic int chdev_alloc_buffer(struct chdev_device *dev, size_t size)\n{\n    char *newbuf;\n\n    if (size == 0 || size > MAX_BUFFER_SIZE)\n        return -EINVAL;\n\n    newbuf = kzalloc(size, GFP_KERNEL);\n    if (!newbuf)\n        return -ENOMEM;\n\n    /* free old buffer if exists */\n    if (dev->buffer)\n        kfree(dev->buffer);\n\n    dev->buffer = newbuf;\n    dev->buf_size = size;\n    dev->data_len = 0;\n    return 0;\n}\n\nstatic int chdev_open(struct inode *inode, struct file *file)\n{\n    struct chdev_device *dev = container_of(inode->i_cdev, struct chdev_device, cdev);\n    file->private_data = dev;\n    return 0;\n}\n\nstatic int chdev_release(struct inode *inode, struct file *file)\n{\n    return 0;\n}\n\nstatic ssize_t chdev_read(struct file *file, char __user *buf, size_t count, loff_t *ppos)\n{\n    struct chdev_device *dev = file->private_data;\n    ssize_t ret = 0;\n\n    if (mutex_lock_interruptible(&dev->lock))\n        return -ERESTARTSYS;\n\n    if (*ppos >= dev->data_len) {\n        ret = 0; /* EOF */\n        goto out;\n    }\n\n    if (count > dev->data_len - *ppos)\n        count = dev->data_len - *ppos;\n\n    if (copy_to_user(buf, dev->buffer + *ppos, count)) {\n        ret = -EFAULT;\n        goto out;\n    }\n\n    *ppos += count;\n    ret = count;\n\nout:\n    mutex_unlock(&dev->lock);\n    return ret;\n}\n\nstatic ssize_t chdev_write(struct file *file, const char __user *buf, size_t count, loff_t *ppos)\n{\n    struct chdev_device *dev = file->private_data;\n    ssize_t ret = 0;\n    size_t max_writable;\n\n    if (mutex_lock_interruptible(&dev->lock))\n        return -ERESTARTSYS;\n\n    if (*ppos >= dev->buf_size) {\n        ret = -ENOSPC;\n        goto out;\n    }\n\n    max_writable = dev->buf_size - *ppos;\n    if (count > max_writable)\n        count = max_writable;\n\n    if (copy_from_user(dev->buffer + *ppos, buf, count)) {\n        ret = -EFAULT;\n        goto out;\n    }\n\n    *ppos += count;\n    if (dev->data_len < *ppos)\n        dev->data_len = *ppos;\n\n    ret = count;\n\nout:\n    mutex_unlock(&dev->lock);\n    return ret;\n}\n\nstatic long chdev_ioctl(struct file *file, unsigned int cmd, unsigned long arg)\n{\n    struct chdev_device *dev = file->private_data;\n    int __user *argp = (int __user *)arg;\n    int val;\n    int ret = 0;\n\n    /* validate magic */\n    if (_IOC_TYPE(cmd) != CHDEV_IOC_MAGIC)\n        return -ENOTTY;\n\n    switch (cmd) {\n    case CHDEV_IOC_CLEAR:\n        if (mutex_lock_interruptible(&dev->lock))\n            return -ERESTARTSYS;\n        memset(dev->buffer, 0, dev->buf_size);\n        dev->data_len = 0;\n        mutex_unlock(&dev->lock);\n        break;\n\n    case CHDEV_IOC_GET_SIZE:\n        val = (int)dev->buf_size;\n        if (copy_to_user(argp, &val, sizeof(int)))\n            ret = -EFAULT;\n        break;\n\n    case CHDEV_IOC_GET_DATALEN:\n        val = (int)dev->data_len;\n        if (copy_to_user(argp, &val, sizeof(int)))\n            ret = -EFAULT;\n        break;\n\n    case CHDEV_IOC_SET_SIZE:\n        /* take an int from user and attempt to resize buffer */\n        if (copy_from_user(&val, argp, sizeof(int))) {\n            ret = -EFAULT;\n            break;\n        }\n\n        if (val <= 0 || val > MAX_BUFFER_SIZE) {\n            ret = -EINVAL;\n            break;\n        }\n\n        /* allocate new buffer while holding lock to avoid races */\n        if (mutex_lock_interruptible(&dev->lock)) {\n            ret = -ERESTARTSYS;\n            break;\n        }\n\n        /* If new size < current data_len, we drop the overflow data */\n        if (val < (int)dev->data_len)\n            dev->data_len = val;\n\n        /* try reallocation by allocating new buffer and copying existing data */\n        {\n            char *newbuf = kzalloc(val, GFP_KERNEL);\n            if (!newbuf) {\n                ret = -ENOMEM;\n                mutex_unlock(&dev->lock);\n                break;\n            }\n            if (dev->data_len)\n                memcpy(newbuf, dev->buffer, dev->data_len);\n            kfree(dev->buffer);\n            dev->buffer = newbuf;\n            dev->buf_size = val;\n        }\n        mutex_unlock(&dev->lock);\n        break;\n\n    default:\n        ret = -ENOTTY;\n        break;\n    }\n\n    return ret;\n}\n\nstatic loff_t chdev_llseek(struct file *file, loff_t offset, int whence)\n{\n    loff_t newpos = 0;\n\n    switch (whence) {\n    case SEEK_SET:\n        newpos = offset;\n        break;\n    case SEEK_CUR:\n        newpos = file->f_pos + offset;\n        break;\n    case SEEK_END:\n        newpos = gdev->buf_size + offset;\n        break;\n    default:\n        return -EINVAL;\n    }\n\n    if (newpos < 0 || newpos > gdev->buf_size)\n        return -EINVAL;\n\n    file->f_pos = newpos;\n    return newpos;\n}\n\nstatic int __init chdev_init(void)\n{\n    int ret;\n    struct device *dev_ret;\n\n    ret = alloc_chrdev_region(&chdev_dev_number, 0, 1, DEVICE_NAME);\n    if (ret < 0) {\n        pr_err(\"chdev: alloc_chrdev_region failed: %d\\n\", ret);\n        return ret;\n    }\n\n    gdev = kzalloc(sizeof(*gdev), GFP_KERNEL);\n    if (!gdev) {\n        ret = -ENOMEM;\n        goto err_unregister;\n    }\n\n    mutex_init(&gdev->lock);\n\n    ret = chdev_alloc_buffer(gdev, DEFAULT_BUFFER_SIZE);\n    if (ret) {\n        pr_err(\"chdev: buffer allocation failed: %d\\n\", ret);\n        goto err_free_dev;\n    }\n\n    cdev_init(&gdev->cdev, &chdev_fops);\n    gdev->cdev.owner = THIS_MODULE;\n\n    ret = cdev_add(&gdev->cdev, chdev_dev_number, 1);\n    if (ret) {\n        pr_err(\"chdev: cdev_add failed: %d\\n\", ret);\n        goto err_free_buffer;\n    }\n\n    chdev_class = class_create(THIS_MODULE, CLASS_NAME);\n    if (IS_ERR(chdev_class)) {\n        ret = PTR_ERR(chdev_class);\n        pr_err(\"chdev: class_create failed: %d\\n\", ret);\n        goto err_del_cdev;\n    }\n\n    dev_ret = device_create(chdev_class, NULL, chdev_dev_number, NULL, DEVICE_NAME);\n    if (IS_ERR(dev_ret)) {\n        ret = PTR_ERR(dev_ret);\n        pr_err(\"chdev: device_create failed: %d\\n\", ret);\n        goto err_destroy_class;\n    }\n\n    pr_info(\"chdev: loaded (major=%d minor=%d)\\n\", MAJOR(chdev_dev_number), MINOR(chdev_dev_number));\n    return 0;\n\nerr_destroy_class:\n    class_destroy(chdev_class);\nerr_del_cdev:\n    cdev_del(&gdev->cdev);\nerr_free_buffer:\n    kfree(gdev->buffer);\nerr_free_dev:\n    kfree(gdev);\nerr_unregister:\n    unregister_chrdev_region(chdev_dev_number, 1);\n    return ret;\n}\n\nstatic void __exit chdev_exit(void)\n{\n    device_destroy(chdev_class, chdev_dev_number);\n    class_destroy(chdev_class);\n    cdev_del(&gdev->cdev);\n    kfree(gdev->buffer);\n    kfree(gdev);\n    unregister_chrdev_region(chdev_dev_number, 1);\n    pr_info(\"chdev: unloaded\\n\");\n}\n\nmodule_init(chdev_init);\nmodule_exit(chdev_exit);\n\n/*\n * Userspace test helper (compile separately):\n *\n * #include <stdio.h>\n * #include <fcntl.h>\n * #include <sys/ioctl.h>\n * #include \"chdev_ioctl_user.h\"  // contains the same IOCTL macros\n *\n * int fd = open(\"/dev/chdev_ioctl\", O_RDWR);\n * int size;\n * ioctl(fd, CHDEV_IOC_GET_SIZE, &size);\n * printf(\"buffer size = %d\\n\", size);\n */\n"
     },
     "security": {
         "issues": [
@@ -43,12 +40,62 @@
         },
         "score": 0.85
     },
-    "overall_score": 84.42,
+    "meta_file": "Tests/2_gpt.c",
+    "performance": {
+        "score": 0.8800000000000001,
+        "details": [
+            "complexity_hits 44 -> -1.2"
+        ]
+    },
+    "runtime": {
+        "compiled": false,
+        "loaded": false,
+        "unloaded": false,
+        "dmesg_success": false,
+        "runtime_notes": "Build failed: warning: the compiler differs from the one used to build the kernel\n  The kernel was built by: x86_64-linux-gnu-gcc-13 (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0\n  You are using:           gcc-13 (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0\nIn file included from ./arch/x86/include/asm/mem_encrypt.h:15,\n                 from ./include/linux/mem_encrypt.h:17,\n                 from ./arch/x86/include/asm/processor-flags.h:6,\n                 from ./arch/x86/include/asm/processor.h:5,\n                 from ./arch/x86/include/asm/timex.h:5,\n                 from ./include/linux/timex.h:67,\n                 from ./include/linux/time32.h:13,\n                 from ./include/linux/time.h:60,\n                 from ./include/linux/stat.h:19,\n                 from ./include/linux/module.h:13,\n                 from /workspaces/Linux-Driver-Code-Grader/Tests/2_gpt.c:21:\n/workspaces/Linux-Driver-Code-Grader/Tests/2_gpt.c: In function \u2018chdev_init\u2019:\n./include/linux/init.h:188:22: error: passing argument 1 of \u2018class_create\u2019 from incompatible pointer type [-Werror=incompatible-pointer-types]\n  188 | #define THIS_MODULE (&__this_module)\n      |                     ~^~~~~~~~~~~~~~~\n      |                      |\n      |                      struct module *\n/workspaces/Linux-Driver-Code-Grader/Tests/2_gpt.c:314:32: note: in expansion of macro \u2018THIS_MODULE\u2019\n  314 |     chdev_class = class_create(THIS_MODULE, CLASS_NAME);\n      |                                ^~~~~~~~~~~\nIn file included from ./include/linux/device.h:31,\n                 from ./include/linux/cdev.h:8,\n                 from /workspaces/Linux-Driver-Code-Grader/Tests/2_gpt.c:24:\n./include/linux/device/class.h:228:54: note: expected \u2018const char *\u2019 but argument is of type \u2018struct module *\u2019\n  228 | struct class * __must_check class_create(const char *name);\n      |                                          ~~~~~~~~~~~~^~~~\n/workspaces/Linux-Driver-Code-Grader/Tests/2_gpt.c:314:19: error: too many arguments to function \u2018class_create\u2019\n  314 |     chdev_class = class_create(THIS_MODULE, CLASS_NAME);\n      |                   ^~~~~~~~~~~~\n./include/linux/device/class.h:228:29: note: declared here\n  228 | struct class * __must_check class_create(const char *name);\n      |                             ^~~~~~~~~~~~\n/workspaces/Linux-Driver-Code-Grader/Tests/2_gpt.c: At top level:\n/workspaces/Linux-Driver-Code-Grader/Tests/2_gpt.c:59:23: warning: \u2018chdev_device\u2019 defined but not used [-Wunused-variable]\n   59 | static struct device *chdev_device;\n      |                       ^~~~~~~~~~~~\ncc1: some warnings being treated as errors\nmake[3]: *** [scripts/Makefile.build:243: /workspaces/Linux-Driver-Code-Grader/Tests/2_gpt.o] Error 1\nmake[2]: *** [/usr/src/linux-headers-6.8.0-1030-azure/Makefile:1925: /workspaces/Linux-Driver-Code-Grader/Tests] Error 2\nmake[1]: *** [Makefile:240: __sub-make] Error 2",
+        "dynamic": {}
+    },
+    "overall_score": 56.68,
     "breakdown": {
-        "Correctness": 40.0,
-        "Security": 21.25,
-        "Code Quality": 18.166666666666668,
-        "Performance": 5,
-        "Advanced": 0
+        "Correctness": {
+            "awarded": 10.0,
+            "max": 40.0,
+            "details": [
+                "Compilation failed",
+                "Functionality score: 1.00 -> 10.00/10",
+                "Runtime score: 0.0/10 (failed to load, notes: Build failed: warning: the compiler differs from the one used to build the kernel\n  The kernel was built by: x86_64-linux-gnu-gcc-13 (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0\n  You are using:           gcc-13 (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0\nIn file included from ./arch/x86/include/asm/mem_encrypt.h:15,\n                 from ./include/linux/mem_encrypt.h:17,\n                 from ./arch/x86/include/asm/processor-flags.h:6,\n                 from ./arch/x86/include/asm/processor.h:5,\n                 from ./arch/x86/include/asm/timex.h:5,\n                 from ./include/linux/timex.h:67,\n                 from ./include/linux/time32.h:13,\n                 from ./include/linux/time.h:60,\n                 from ./include/linux/stat.h:19,\n                 from ./include/linux/module.h:13,\n                 from /workspaces/Linux-Driver-Code-Grader/Tests/2_gpt.c:21:\n/workspaces/Linux-Driver-Code-Grader/Tests/2_gpt.c: In function \u2018chdev_init\u2019:\n./include/linux/init.h:188:22: error: passing argument 1 of \u2018class_create\u2019 from incompatible pointer type [-Werror=incompatible-pointer-types]\n  188 | #define THIS_MODULE (&__this_module)\n      |                     ~^~~~~~~~~~~~~~~\n      |                      |\n      |                      struct module *\n/workspaces/Linux-Driver-Code-Grader/Tests/2_gpt.c:314:32: note: in expansion of macro \u2018THIS_MODULE\u2019\n  314 |     chdev_class = class_create(THIS_MODULE, CLASS_NAME);\n      |                                ^~~~~~~~~~~\nIn file included from ./include/linux/device.h:31,\n                 from ./include/linux/cdev.h:8,\n                 from /workspaces/Linux-Driver-Code-Grader/Tests/2_gpt.c:24:\n./include/linux/device/class.h:228:54: note: expected \u2018const char *\u2019 but argument is of type \u2018struct module *\u2019\n  228 | struct class * __must_check class_create(const char *name);\n      |                                          ~~~~~~~~~~~~^~~~\n/workspaces/Linux-Driver-Code-Grader/Tests/2_gpt.c:314:19: error: too many arguments to function \u2018class_create\u2019\n  314 |     chdev_class = class_create(THIS_MODULE, CLASS_NAME);\n      |                   ^~~~~~~~~~~~\n./include/linux/device/class.h:228:29: note: declared here\n  228 | struct class * __must_check class_create(const char *name);\n      |                             ^~~~~~~~~~~~\n/workspaces/Linux-Driver-Code-Grader/Tests/2_gpt.c: At top level:\n/workspaces/Linux-Driver-Code-Grader/Tests/2_gpt.c:59:23: warning: \u2018chdev_device\u2019 defined but not used [-Wunused-variable]\n   59 | static struct device *chdev_device;\n      |                       ^~~~~~~~~~~~\ncc1: some warnings being treated as errors\nmake[3]: *** [scripts/Makefile.build:243: /workspaces/Linux-Driver-Code-Grader/Tests/2_gpt.o] Error 1\nmake[2]: *** [/usr/src/linux-headers-6.8.0-1030-azure/Makefile:1925: /workspaces/Linux-Driver-Code-Grader/Tests] Error 2\nmake[1]: *** [Makefile:240: __sub-make] Error 2)"
+            ]
+        },
+        "Security": {
+            "awarded": 21.25,
+            "max": 25.0,
+            "details": [
+                "sub_scores: {'memory_safety': 1.0, 'resource_mgmt': 1.0, 'race_conditions': 1.0, 'input_validation': 0.39999999999999997}",
+                "issues: ['copy_to_user_unchecked', 'copy_from_user_unchecked']"
+            ]
+        },
+        "Code Quality": {
+            "awarded": 16.63,
+            "max": 20.0,
+            "details": [
+                {
+                    "style_score": 0.88,
+                    "documentation_score": 0.6,
+                    "maintainability_score": 0.998
+                }
+            ]
+        },
+        "Performance": {
+            "awarded": 8.8,
+            "max": 10.0,
+            "details": [
+                "complexity_hits 44 -> -1.2"
+            ]
+        },
+        "Advanced": {
+            "awarded": 0.0,
+            "max": 5.0,
+            "details": []
+        }
     }
 }

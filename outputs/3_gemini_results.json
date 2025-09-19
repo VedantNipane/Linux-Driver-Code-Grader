@@ -1,34 +1,27 @@
 {
     "compilation": {
         "success": true,
+        "method": "gcc-fallback",
+        "output": "Tests/3_gemini.c:1:10: fatal error: linux/init.h: No such file or directory\n    1 | #include <linux/init.h>\n      |          ^~~~~~~~~~~~~~\ncompilation terminated.\n",
         "errors": 1,
         "warnings": 0,
-        "output": "Tests/3_gemini.c:1:10: fatal error: linux/init.h: No such file or directory\n    1 | #include <linux/init.h>\n      |          ^~~~~~~~~~~~~~\ncompilation terminated.\n",
         "note": "Soft pass: missing kernel headers only"
     },
     "structure": {
         "module_init": true,
         "module_exit": true,
-        "function_count": 6,
-        "score": 1.0
+        "function_count": 3,
+        "avg_func_len": 34.0,
+        "driver_type": "block",
+        "functionality_score": 0.6666666666666666,
+        "fops_present": []
     },
     "style": {
-        "checks": {
-            "includes": 1.0,
-            "metadata": 1.0,
-            "core_functions": 1.0,
-            "device_operations": 0.0,
-            "error_handling": 0.75
-        },
-        "score": 0.775,
-        "function_count": 0,
-        "details": {
-            "includes_found": 3,
-            "metadata_found": 3.0,
-            "core_functions_found": 2.0,
-            "device_ops_found": 0,
-            "error_handling_indicators": 3.0
-        }
+        "violations": 5,
+        "style_score": 0.95,
+        "documentation_score": 0.5,
+        "maintainability_score": 0.9319999999999999,
+        "output": "#include <linux/init.h>\n#include <linux/module.h>\n#include <linux/kernel.h>\n#include <linux/fs.h>\n#include <linux/blkdev.h>\n#include <linux/spinlock.h>\n#include <linux/genhd.h>\n#include <linux/vmalloc.h>\n#include <linux/hdreg.h>\n\nMODULE_LICENSE(\"GPL\");\nMODULE_AUTHOR(\"Your Name\");\nMODULE_DESCRIPTION(\"A simple block device driver with a 1MB virtual disk.\");\nMODULE_VERSION(\"1.0\");\n\n// Macros for the virtual disk\n#define VIRT_DISK_NAME \"vblock\"\n#define VIRT_DISK_MINORS 1\n#define VIRT_DISK_SIZE_MB 1\n#define VIRT_DISK_SECTOR_SIZE 512\n#define VIRT_DISK_SECTORS (VIRT_DISK_SIZE_MB * 1024 * 1024 / VIRT_DISK_SECTOR_SIZE)\n\n// Structure to hold the device-specific information\nstatic struct simple_bd {\n    // The request queue, handling all I/O requests for the device\n    struct request_queue *queue;\n\n    // The gendisk structure, representing the block device to the kernel\n    struct gendisk *disk;\n\n    // The in-memory buffer acting as our virtual disk\n    u8 *data;\n\n    // Spinlock for thread-safe access to the data\n    spinlock_t lock;\n} simple_bd_device;\n\n// Block device operations\nstatic struct block_device_operations fops = {\n    .owner = THIS_MODULE,\n};\n\n// Function to handle I/O requests from the kernel\nstatic blk_qc_t simple_bd_request(struct request_queue *q, struct bio *bio) {\n    struct bio_vec bvec;\n    struct bvec_iter iter;\n    unsigned long sector = bio->bi_iter.bi_sector;\n    u8 *data_ptr = simple_bd_device.data + (sector * VIRT_DISK_SECTOR_SIZE);\n\n    // The bio structure is a list of segments. We must iterate through them.\n    bio_for_each_segment(bvec, bio, iter) {\n        // Map the page to kernel space\n        void *page_data = kmap(bvec.bv_page);\n        \n        // Calculate the physical address and length for this segment\n        unsigned int len = bvec.bv_len;\n        unsigned int offset = bvec.bv_offset;\n\n        // Perform the read or write operation\n        if (bio_data_dir(bio) == REQ_OP_WRITE) {\n            // Write from the page to our disk data buffer\n            memcpy(data_ptr, page_data + offset, len);\n        } else {\n            // Read from our disk data buffer to the page\n            memcpy(page_data + offset, data_ptr, len);\n        }\n\n        // Unmap the page\n        kunmap(bvec.bv_page);\n        \n        // Move the data pointer forward\n        data_ptr += len;\n    }\n\n    // Mark the bio as complete\n    bio_endio(bio);\n\n    return BLK_QC_T_NONE;\n}\n\n// Module initialization function\nstatic int __init simple_bd_init(void) {\n    int ret = 0;\n\n    printk(KERN_INFO \"simple_bd: Initializing block device driver.\\n\");\n\n    // 1. Allocate a virtual memory buffer for the disk\n    simple_bd_device.data = vmalloc(VIRT_DISK_SIZE_MB * 1024 * 1024);\n    if (!simple_bd_device.data) {\n        printk(KERN_ALERT \"simple_bd: Failed to allocate memory for virtual disk.\\n\");\n        return -ENOMEM;\n    }\n\n    // 2. Initialize the spinlock for the queue\n    spin_lock_init(&simple_bd_device.lock);\n\n    // 3. Allocate a request queue\n    simple_bd_device.queue = blk_mq_init_sq_queue(&simple_bd_device.lock, simple_bd_request, 128, BLK_MQ_F_SHOULD_MERGE);\n    if (IS_ERR(simple_bd_device.queue)) {\n        ret = PTR_ERR(simple_bd_device.queue);\n        vfree(simple_bd_device.data);\n        printk(KERN_ALERT \"simple_bd: Failed to allocate request queue.\\n\");\n        return ret;\n    }\n\n    // 4. Allocate and set up the gendisk structure\n    simple_bd_device.disk = alloc_disk(VIRT_DISK_MINORS);\n    if (!simple_bd_device.disk) {\n        blk_cleanup_queue(simple_bd_device.queue);\n        vfree(simple_bd_device.data);\n        printk(KERN_ALERT \"simple_bd: Failed to allocate gendisk structure.\\n\");\n        return -ENOMEM;\n    }\n\n    // Assign the queue to the disk\n    simple_bd_device.disk->queue = simple_bd_device.queue;\n    simple_bd_device.disk->fops = &fops;\n    simple_bd_device.disk->private_data = &simple_bd_device;\n    snprintf(simple_bd_device.disk->disk_name, DISK_NAME_LEN, VIRT_DISK_NAME \"d\");\n\n    // Set the number of sectors (disk size)\n    set_capacity(simple_bd_device.disk, VIRT_DISK_SECTORS);\n\n    // 5. Add the disk to the kernel\n    add_disk(simple_bd_device.disk);\n\n    printk(KERN_INFO \"simple_bd: Block device initialized and ready. Size is %dMB.\\n\", VIRT_DISK_SIZE_MB);\n    return 0;\n}\n\n// Module exit function\nstatic void __exit simple_bd_exit(void) {\n    printk(KERN_INFO \"simple_bd: Exiting block device driver.\\n\");\n\n    // 1. Delete the disk from the kernel\n    if (simple_bd_device.disk) {\n        del_gendisk(simple_bd_device.disk);\n    }\n    \n    // 2. Clean up the request queue\n    if (simple_bd_device.queue) {\n        blk_cleanup_queue(simple_bd_device.queue);\n    }\n    \n    // 3. Free the allocated virtual disk memory\n    if (simple_bd_device.data) {\n        vfree(simple_bd_device.data);\n    }\n}\n\nmodule_init(simple_bd_init);\nmodule_exit(simple_bd_exit);\n"
     },
     "security": {
         "issues": [
@@ -42,12 +35,59 @@
         },
         "score": 0.9
     },
-    "overall_score": 83.0,
+    "meta_file": "Tests/3_gemini.c",
+    "performance": {
+        "score": 1.0,
+        "details": []
+    },
+    "runtime": {
+        "compiled": false,
+        "loaded": false,
+        "unloaded": false,
+        "dmesg_success": false,
+        "runtime_notes": "Build failed: warning: the compiler differs from the one used to build the kernel\n  The kernel was built by: x86_64-linux-gnu-gcc-13 (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0\n  You are using:           gcc-13 (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0\n/workspaces/Linux-Driver-Code-Grader/Tests/3_gemini.c:7:10: fatal error: linux/genhd.h: No such file or directory\n    7 | #include <linux/genhd.h>\n      |          ^~~~~~~~~~~~~~~\ncompilation terminated.\nmake[3]: *** [scripts/Makefile.build:243: /workspaces/Linux-Driver-Code-Grader/Tests/3_gemini.o] Error 1\nmake[2]: *** [/usr/src/linux-headers-6.8.0-1030-azure/Makefile:1925: /workspaces/Linux-Driver-Code-Grader/Tests] Error 2\nmake[1]: *** [Makefile:240: __sub-make] Error 2",
+        "dynamic": {}
+    },
+    "overall_score": 85.36,
     "breakdown": {
-        "Correctness": 40.0,
-        "Security": 22.5,
-        "Code Quality": 15.5,
-        "Performance": 5,
-        "Advanced": 0
+        "Correctness": {
+            "awarded": 36.67,
+            "max": 40.0,
+            "details": [
+                "Compilation: success (method=gcc-fallback)",
+                "Soft pass: missing kernel headers only",
+                "Functionality score: 0.67 -> 6.67/10",
+                "Runtime score: 0.0/10 (failed to load, notes: Build failed: warning: the compiler differs from the one used to build the kernel\n  The kernel was built by: x86_64-linux-gnu-gcc-13 (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0\n  You are using:           gcc-13 (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0\n/workspaces/Linux-Driver-Code-Grader/Tests/3_gemini.c:7:10: fatal error: linux/genhd.h: No such file or directory\n    7 | #include <linux/genhd.h>\n      |          ^~~~~~~~~~~~~~~\ncompilation terminated.\nmake[3]: *** [scripts/Makefile.build:243: /workspaces/Linux-Driver-Code-Grader/Tests/3_gemini.o] Error 1\nmake[2]: *** [/usr/src/linux-headers-6.8.0-1030-azure/Makefile:1925: /workspaces/Linux-Driver-Code-Grader/Tests] Error 2\nmake[1]: *** [Makefile:240: __sub-make] Error 2)"
+            ]
+        },
+        "Security": {
+            "awarded": 22.5,
+            "max": 25.0,
+            "details": [
+                "sub_scores: {'memory_safety': 1.0, 'resource_mgmt': 1.0, 'race_conditions': 0.6, 'input_validation': 1.0}",
+                "issues: ['spinlock_not_unlocked']"
+            ]
+        },
+        "Code Quality": {
+            "awarded": 16.19,
+            "max": 20.0,
+            "details": [
+                {
+                    "style_score": 0.95,
+                    "documentation_score": 0.5,
+                    "maintainability_score": 0.932
+                }
+            ]
+        },
+        "Performance": {
+            "awarded": 10.0,
+            "max": 10.0,
+            "details": []
+        },
+        "Advanced": {
+            "awarded": 0.0,
+            "max": 5.0,
+            "details": []
+        }
     }
 }

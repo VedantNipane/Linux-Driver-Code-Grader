@@ -1,34 +1,31 @@
 {
     "compilation": {
-        "success": true,
-        "errors": 1,
-        "warnings": 0,
-        "output": "Tests/2_claude.c:4:10: fatal error: linux/uaccess.h: No such file or directory\n    4 | #include <linux/uaccess.h>\n      |          ^~~~~~~~~~~~~~~~~\ncompilation terminated.\n",
-        "note": "Soft pass: missing kernel headers only"
+        "success": false,
+        "method": "kbuild",
+        "output": "make[1]: Entering directory '/usr/src/linux-headers-6.8.0-1030-azure'\n  CC [M]  /tmp/evaluator_kbuild_37xpgqui/2_claude.o\nmake[1]: Leaving directory '/usr/src/linux-headers-6.8.0-1030-azure'\nwarning: the compiler differs from the one used to build the kernel\n  The kernel was built by: x86_64-linux-gnu-gcc-13 (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0\n  You are using:           gcc-13 (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0\nIn file included from ./arch/x86/include/asm/mem_encrypt.h:15,\n                 from ./include/linux/mem_encrypt.h:17,\n                 from ./arch/x86/include/asm/processor-flags.h:6,\n                 from ./arch/x86/include/asm/processor.h:5,\n                 from ./arch/x86/include/asm/timex.h:5,\n                 from ./include/linux/timex.h:67,\n                 from ./include/linux/time32.h:13,\n                 from ./include/linux/time.h:60,\n                 from ./include/linux/stat.h:19,\n                 from ./include/linux/module.h:13,\n                 from /tmp/evaluator_kbuild_37xpgqui/2_claude.c:1:\n/tmp/evaluator_kbuild_37xpgqui/2_claude.c: In function \u2018mychar_init\u2019:\n./include/linux/init.h:188:22: error: passing argument 1 of \u2018class_create\u2019 from incompatible pointer type [-Werror=incompatible-pointer-types]\n  188 | #define THIS_MODULE (&__this_module)\n      |                     ~^~~~~~~~~~~~~~~\n      |                      |\n      |                      struct module *\n/tmp/evaluator_kbuild_37xpgqui/2_claude.c:313:33: note: in expansion of macro \u2018THIS_MODULE\u2019\n  313 |     mychar_class = class_create(THIS_MODULE, CLASS_NAME);\n      |                                 ^~~~~~~~~~~\nIn file included from ./include/linux/device.h:31,\n                 from ./include/linux/cdev.h:8,\n                 from /tmp/evaluator_kbuild_37xpgqui/2_claude.c:7:\n./include/linux/device/class.h:228:54: note: expected \u2018const char *\u2019 but argument is of type \u2018struct module *\u2019\n  228 | struct class * __must_check class_create(const char *name);\n      |                                          ~~~~~~~~~~~~^~~~\n/tmp/evaluator_kbuild_37xpgqui/2_claude.c:313:20: error: too many arguments to function \u2018class_create\u2019\n  313 |     mychar_class = class_create(THIS_MODULE, CLASS_NAME);\n      |                    ^~~~~~~~~~~~\n./include/linux/device/class.h:228:29: note: declared here\n  228 | struct class * __must_check class_create(const char *name);\n      |                             ^~~~~~~~~~~~\ncc1: some warnings being treated as errors\nmake[3]: *** [scripts/Makefile.build:243: /tmp/evaluator_kbuild_37xpgqui/2_claude.o] Error 1\nmake[2]: *** [/usr/src/linux-headers-6.8.0-1030-azure/Makefile:1925: /tmp/evaluator_kbuild_37xpgqui] Error 2\nmake[1]: *** [Makefile:240: __sub-make] Error 2\n",
+        "errors": 2,
+        "warnings": 1
     },
     "structure": {
         "module_init": true,
         "module_exit": true,
-        "function_count": 11,
-        "score": 1.0
+        "function_count": 7,
+        "avg_func_len": 1.0,
+        "driver_type": "char",
+        "functionality_score": 1.0,
+        "fops_present": [
+            "open",
+            "read",
+            "write",
+            "release"
+        ]
     },
     "style": {
-        "checks": {
-            "includes": 0.6666666666666666,
-            "metadata": 1.0,
-            "core_functions": 1.0,
-            "device_operations": 1.0,
-            "error_handling": 0.75
-        },
-        "score": 0.9083333333333333,
-        "function_count": 0,
-        "details": {
-            "includes_found": 2,
-            "metadata_found": 3.0,
-            "core_functions_found": 2.0,
-            "device_ops_found": 4,
-            "error_handling_indicators": 3.0
-        }
+        "violations": 9,
+        "style_score": 0.91,
+        "documentation_score": 0.5,
+        "maintainability_score": 0.998,
+        "output": "#include <linux/module.h>\n#include <linux/kernel.h>\n#include <linux/fs.h>\n#include <linux/uaccess.h>\n#include <linux/slab.h>\n#include <linux/mutex.h>\n#include <linux/cdev.h>\n#include <linux/device.h>\n\n#define DEVICE_NAME \"mychardev\"\n#define CLASS_NAME \"mychar\"\n#define BUFFER_SIZE 1024\n\n// IOCTL command definitions\n#define MYCHAR_IOC_MAGIC 'k'\n#define MYCHAR_RESET     _IO(MYCHAR_IOC_MAGIC, 0)\n#define MYCHAR_SET_SIZE  _IOW(MYCHAR_IOC_MAGIC, 1, int)\n#define MYCHAR_GET_SIZE  _IOR(MYCHAR_IOC_MAGIC, 2, int)\n#define MYCHAR_GET_STATS _IOR(MYCHAR_IOC_MAGIC, 3, struct device_stats)\n#define MYCHAR_IOC_MAXNR 3\n\n// Statistics structure\nstruct device_stats {\n    unsigned long read_count;\n    unsigned long write_count;\n    unsigned long bytes_read;\n    unsigned long bytes_written;\n};\n\n// Device structure\nstruct mychar_dev {\n    struct cdev cdev;\n    char *buffer;\n    size_t buffer_size;\n    size_t data_size;\n    struct mutex mutex;\n    struct device_stats stats;\n};\n\n// Global variables\nstatic int major_number;\nstatic struct class *mychar_class = NULL;\nstatic struct device *mychar_device = NULL;\nstatic struct mychar_dev *mychar_dev_ptr = NULL;\n\n// Function prototypes\nstatic int mychar_open(struct inode *, struct file *);\nstatic int mychar_release(struct inode *, struct file *);\nstatic ssize_t mychar_read(struct file *, char __user *, size_t, loff_t *);\nstatic ssize_t mychar_write(struct file *, const char __user *, size_t, loff_t *);\nstatic long mychar_ioctl(struct file *, unsigned int, unsigned long);\n\n// File operations structure\nstatic struct file_operations fops = {\n    .owner = THIS_MODULE,\n    .open = mychar_open,\n    .release = mychar_release,\n    .read = mychar_read,\n    .write = mychar_write,\n    .unlocked_ioctl = mychar_ioctl,\n    .llseek = no_llseek,\n};\n\n// Open device file\nstatic int mychar_open(struct inode *inodep, struct file *filep)\n{\n    struct mychar_dev *dev;\n    \n    printk(KERN_INFO \"mychardev: Device opened\\n\");\n    \n    // Get the device structure\n    dev = container_of(inodep->i_cdev, struct mychar_dev, cdev);\n    filep->private_data = dev;\n    \n    return 0;\n}\n\n// Release device file\nstatic int mychar_release(struct inode *inodep, struct file *filep)\n{\n    printk(KERN_INFO \"mychardev: Device closed\\n\");\n    return 0;\n}\n\n// Read from device\nstatic ssize_t mychar_read(struct file *filep, char __user *buffer, size_t len, loff_t *offset)\n{\n    struct mychar_dev *dev = filep->private_data;\n    ssize_t bytes_read = 0;\n    int error_count = 0;\n    \n    if (!dev) {\n        printk(KERN_ERR \"mychardev: Invalid device pointer\\n\");\n        return -ENODEV;\n    }\n    \n    // Lock the device\n    if (mutex_lock_interruptible(&dev->mutex))\n        return -ERESTARTSYS;\n    \n    // Check if we're at end of data\n    if (*offset >= dev->data_size) {\n        mutex_unlock(&dev->mutex);\n        return 0; // EOF\n    }\n    \n    // Calculate bytes to read\n    bytes_read = min(len, (size_t)(dev->data_size - *offset));\n    \n    // Copy data to user space\n    error_count = copy_to_user(buffer, dev->buffer + *offset, bytes_read);\n    if (error_count != 0) {\n        printk(KERN_ERR \"mychardev: Failed to copy %d bytes to user\\n\", error_count);\n        bytes_read = -EFAULT;\n        goto out;\n    }\n    \n    // Update offset and statistics\n    *offset += bytes_read;\n    dev->stats.read_count++;\n    dev->stats.bytes_read += bytes_read;\n    \n    printk(KERN_INFO \"mychardev: Read %ld bytes from device\\n\", bytes_read);\n\nout:\n    mutex_unlock(&dev->mutex);\n    return bytes_read;\n}\n\n// Write to device\nstatic ssize_t mychar_write(struct file *filep, const char __user *buffer, size_t len, loff_t *offset)\n{\n    struct mychar_dev *dev = filep->private_data;\n    ssize_t bytes_written = 0;\n    int error_count = 0;\n    \n    if (!dev) {\n        printk(KERN_ERR \"mychardev: Invalid device pointer\\n\");\n        return -ENODEV;\n    }\n    \n    // Lock the device\n    if (mutex_lock_interruptible(&dev->mutex))\n        return -ERESTARTSYS;\n    \n    // Check if we can write data\n    if (*offset >= dev->buffer_size) {\n        mutex_unlock(&dev->mutex);\n        return -ENOSPC; // No space left\n    }\n    \n    // Calculate bytes to write\n    bytes_written = min(len, (size_t)(dev->buffer_size - *offset));\n    \n    // Copy data from user space\n    error_count = copy_from_user(dev->buffer + *offset, buffer, bytes_written);\n    if (error_count != 0) {\n        printk(KERN_ERR \"mychardev: Failed to copy %d bytes from user\\n\", error_count);\n        bytes_written = -EFAULT;\n        goto out;\n    }\n    \n    // Update data size, offset, and statistics\n    *offset += bytes_written;\n    if (*offset > dev->data_size)\n        dev->data_size = *offset;\n    \n    dev->stats.write_count++;\n    dev->stats.bytes_written += bytes_written;\n    \n    printk(KERN_INFO \"mychardev: Wrote %ld bytes to device\\n\", bytes_written);\n\nout:\n    mutex_unlock(&dev->mutex);\n    return bytes_written;\n}\n\n// IOCTL handler\nstatic long mychar_ioctl(struct file *filep, unsigned int cmd, unsigned long arg)\n{\n    struct mychar_dev *dev = filep->private_data;\n    int retval = 0;\n    int size;\n    struct device_stats stats;\n    \n    if (!dev) {\n        printk(KERN_ERR \"mychardev: Invalid device pointer\\n\");\n        return -ENODEV;\n    }\n    \n    // Check magic number and command range\n    if (_IOC_TYPE(cmd) != MYCHAR_IOC_MAGIC)\n        return -ENOTTY;\n    if (_IOC_NR(cmd) > MYCHAR_IOC_MAXNR)\n        return -ENOTTY;\n    \n    // Check access permissions\n    if (_IOC_DIR(cmd) & _IOC_READ)\n        retval = !access_ok((void __user *)arg, _IOC_SIZE(cmd));\n    else if (_IOC_DIR(cmd) & _IOC_WRITE)\n        retval = !access_ok((void __user *)arg, _IOC_SIZE(cmd));\n    \n    if (retval)\n        return -EFAULT;\n    \n    // Lock the device\n    if (mutex_lock_interruptible(&dev->mutex))\n        return -ERESTARTSYS;\n    \n    switch (cmd) {\n    case MYCHAR_RESET:\n        printk(KERN_INFO \"mychardev: Resetting device\\n\");\n        memset(dev->buffer, 0, dev->buffer_size);\n        dev->data_size = 0;\n        memset(&dev->stats, 0, sizeof(struct device_stats));\n        break;\n        \n    case MYCHAR_SET_SIZE:\n        if (get_user(size, (int __user *)arg)) {\n            retval = -EFAULT;\n            break;\n        }\n        \n        if (size <= 0 || size > 4096) {\n            retval = -EINVAL;\n            break;\n        }\n        \n        // Reallocate buffer if needed\n        if (size != dev->buffer_size) {\n            char *new_buffer = krealloc(dev->buffer, size, GFP_KERNEL);\n            if (!new_buffer) {\n                retval = -ENOMEM;\n                break;\n            }\n            \n            dev->buffer = new_buffer;\n            dev->buffer_size = size;\n            if (dev->data_size > size)\n                dev->data_size = size;\n                \n            printk(KERN_INFO \"mychardev: Buffer size set to %d bytes\\n\", size);\n        }\n        break;\n        \n    case MYCHAR_GET_SIZE:\n        if (put_user(dev->buffer_size, (int __user *)arg))\n            retval = -EFAULT;\n        break;\n        \n    case MYCHAR_GET_STATS:\n        stats = dev->stats;\n        if (copy_to_user((struct device_stats __user *)arg, &stats, sizeof(stats)))\n            retval = -EFAULT;\n        break;\n        \n    default:\n        retval = -ENOTTY;\n        break;\n    }\n    \n    mutex_unlock(&dev->mutex);\n    return retval;\n}\n\n// Module initialization\nstatic int __init mychar_init(void)\n{\n    int result;\n    dev_t dev_num;\n    \n    printk(KERN_INFO \"mychardev: Initializing module\\n\");\n    \n    // Allocate device structure\n    mychar_dev_ptr = kzalloc(sizeof(struct mychar_dev), GFP_KERNEL);\n    if (!mychar_dev_ptr) {\n        printk(KERN_ERR \"mychardev: Failed to allocate device structure\\n\");\n        return -ENOMEM;\n    }\n    \n    // Initialize mutex\n    mutex_init(&mychar_dev_ptr->mutex);\n    \n    // Allocate initial buffer\n    mychar_dev_ptr->buffer = kzalloc(BUFFER_SIZE, GFP_KERNEL);\n    if (!mychar_dev_ptr->buffer) {\n        printk(KERN_ERR \"mychardev: Failed to allocate buffer\\n\");\n        result = -ENOMEM;\n        goto fail_buffer;\n    }\n    mychar_dev_ptr->buffer_size = BUFFER_SIZE;\n    mychar_dev_ptr->data_size = 0;\n    \n    // Allocate major number dynamically\n    result = alloc_chrdev_region(&dev_num, 0, 1, DEVICE_NAME);\n    if (result < 0) {\n        printk(KERN_ERR \"mychardev: Failed to allocate major number\\n\");\n        goto fail_chrdev;\n    }\n    major_number = MAJOR(dev_num);\n    \n    // Initialize and add character device\n    cdev_init(&mychar_dev_ptr->cdev, &fops);\n    mychar_dev_ptr->cdev.owner = THIS_MODULE;\n    \n    result = cdev_add(&mychar_dev_ptr->cdev, dev_num, 1);\n    if (result) {\n        printk(KERN_ERR \"mychardev: Failed to add cdev\\n\");\n        goto fail_cdev_add;\n    }\n    \n    // Create device class\n    mychar_class = class_create(THIS_MODULE, CLASS_NAME);\n    if (IS_ERR(mychar_class)) {\n        printk(KERN_ERR \"mychardev: Failed to create class\\n\");\n        result = PTR_ERR(mychar_class);\n        goto fail_class;\n    }\n    \n    // Create device\n    mychar_device = device_create(mychar_class, NULL, dev_num, NULL, DEVICE_NAME);\n    if (IS_ERR(mychar_device)) {\n        printk(KERN_ERR \"mychardev: Failed to create device\\n\");\n        result = PTR_ERR(mychar_device);\n        goto fail_device;\n    }\n    \n    printk(KERN_INFO \"mychardev: Module loaded successfully (Major: %d)\\n\", major_number);\n    return 0;\n    \nfail_device:\n    class_destroy(mychar_class);\nfail_class:\n    cdev_del(&mychar_dev_ptr->cdev);\nfail_cdev_add:\n    unregister_chrdev_region(MKDEV(major_number, 0), 1);\nfail_chrdev:\n    kfree(mychar_dev_ptr->buffer);\nfail_buffer:\n    kfree(mychar_dev_ptr);\n    return result;\n}\n\n// Module cleanup\nstatic void __exit mychar_exit(void)\n{\n    printk(KERN_INFO \"mychardev: Cleaning up module\\n\");\n    \n    // Remove device and class\n    if (mychar_device)\n        device_destroy(mychar_class, MKDEV(major_number, 0));\n    if (mychar_class)\n        class_destroy(mychar_class);\n    \n    // Remove character device\n    if (mychar_dev_ptr) {\n        cdev_del(&mychar_dev_ptr->cdev);\n        kfree(mychar_dev_ptr->buffer);\n        kfree(mychar_dev_ptr);\n    }\n    \n    // Unregister major number\n    unregister_chrdev_region(MKDEV(major_number, 0), 1);\n    \n    printk(KERN_INFO \"mychardev: Module unloaded\\n\");\n}\n\nmodule_init(mychar_init);\nmodule_exit(mychar_exit);\n\nMODULE_LICENSE(\"GPL\");\nMODULE_AUTHOR(\"Your Name\");\nMODULE_DESCRIPTION(\"A complete Linux character device driver\");\nMODULE_VERSION(\"1.0\");"
     },
     "security": {
         "issues": [
@@ -43,12 +40,62 @@
         },
         "score": 0.85
     },
-    "overall_score": 84.42,
+    "meta_file": "Tests/2_claude.c",
+    "performance": {
+        "score": 0.885,
+        "details": [
+            "complexity_hits 43 -> -1.1"
+        ]
+    },
+    "runtime": {
+        "compiled": false,
+        "loaded": false,
+        "unloaded": false,
+        "dmesg_success": false,
+        "runtime_notes": "Build failed: warning: the compiler differs from the one used to build the kernel\n  The kernel was built by: x86_64-linux-gnu-gcc-13 (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0\n  You are using:           gcc-13 (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0\nIn file included from ./arch/x86/include/asm/mem_encrypt.h:15,\n                 from ./include/linux/mem_encrypt.h:17,\n                 from ./arch/x86/include/asm/processor-flags.h:6,\n                 from ./arch/x86/include/asm/processor.h:5,\n                 from ./arch/x86/include/asm/timex.h:5,\n                 from ./include/linux/timex.h:67,\n                 from ./include/linux/time32.h:13,\n                 from ./include/linux/time.h:60,\n                 from ./include/linux/stat.h:19,\n                 from ./include/linux/module.h:13,\n                 from /workspaces/Linux-Driver-Code-Grader/Tests/2_claude.c:1:\n/workspaces/Linux-Driver-Code-Grader/Tests/2_claude.c: In function \u2018mychar_init\u2019:\n./include/linux/init.h:188:22: error: passing argument 1 of \u2018class_create\u2019 from incompatible pointer type [-Werror=incompatible-pointer-types]\n  188 | #define THIS_MODULE (&__this_module)\n      |                     ~^~~~~~~~~~~~~~~\n      |                      |\n      |                      struct module *\n/workspaces/Linux-Driver-Code-Grader/Tests/2_claude.c:313:33: note: in expansion of macro \u2018THIS_MODULE\u2019\n  313 |     mychar_class = class_create(THIS_MODULE, CLASS_NAME);\n      |                                 ^~~~~~~~~~~\nIn file included from ./include/linux/device.h:31,\n                 from ./include/linux/cdev.h:8,\n                 from /workspaces/Linux-Driver-Code-Grader/Tests/2_claude.c:7:\n./include/linux/device/class.h:228:54: note: expected \u2018const char *\u2019 but argument is of type \u2018struct module *\u2019\n  228 | struct class * __must_check class_create(const char *name);\n      |                                          ~~~~~~~~~~~~^~~~\n/workspaces/Linux-Driver-Code-Grader/Tests/2_claude.c:313:20: error: too many arguments to function \u2018class_create\u2019\n  313 |     mychar_class = class_create(THIS_MODULE, CLASS_NAME);\n      |                    ^~~~~~~~~~~~\n./include/linux/device/class.h:228:29: note: declared here\n  228 | struct class * __must_check class_create(const char *name);\n      |                             ^~~~~~~~~~~~\ncc1: some warnings being treated as errors\nmake[3]: *** [scripts/Makefile.build:243: /workspaces/Linux-Driver-Code-Grader/Tests/2_claude.o] Error 1\nmake[2]: *** [/usr/src/linux-headers-6.8.0-1030-azure/Makefile:1925: /workspaces/Linux-Driver-Code-Grader/Tests] Error 2\nmake[1]: *** [Makefile:240: __sub-make] Error 2",
+        "dynamic": {}
+    },
+    "overall_score": 56.37,
     "breakdown": {
-        "Correctness": 40.0,
-        "Security": 21.25,
-        "Code Quality": 18.166666666666668,
-        "Performance": 5,
-        "Advanced": 0
+        "Correctness": {
+            "awarded": 10.0,
+            "max": 40.0,
+            "details": [
+                "Compilation failed",
+                "Functionality score: 1.00 -> 10.00/10",
+                "Runtime score: 0.0/10 (failed to load, notes: Build failed: warning: the compiler differs from the one used to build the kernel\n  The kernel was built by: x86_64-linux-gnu-gcc-13 (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0\n  You are using:           gcc-13 (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0\nIn file included from ./arch/x86/include/asm/mem_encrypt.h:15,\n                 from ./include/linux/mem_encrypt.h:17,\n                 from ./arch/x86/include/asm/processor-flags.h:6,\n                 from ./arch/x86/include/asm/processor.h:5,\n                 from ./arch/x86/include/asm/timex.h:5,\n                 from ./include/linux/timex.h:67,\n                 from ./include/linux/time32.h:13,\n                 from ./include/linux/time.h:60,\n                 from ./include/linux/stat.h:19,\n                 from ./include/linux/module.h:13,\n                 from /workspaces/Linux-Driver-Code-Grader/Tests/2_claude.c:1:\n/workspaces/Linux-Driver-Code-Grader/Tests/2_claude.c: In function \u2018mychar_init\u2019:\n./include/linux/init.h:188:22: error: passing argument 1 of \u2018class_create\u2019 from incompatible pointer type [-Werror=incompatible-pointer-types]\n  188 | #define THIS_MODULE (&__this_module)\n      |                     ~^~~~~~~~~~~~~~~\n      |                      |\n      |                      struct module *\n/workspaces/Linux-Driver-Code-Grader/Tests/2_claude.c:313:33: note: in expansion of macro \u2018THIS_MODULE\u2019\n  313 |     mychar_class = class_create(THIS_MODULE, CLASS_NAME);\n      |                                 ^~~~~~~~~~~\nIn file included from ./include/linux/device.h:31,\n                 from ./include/linux/cdev.h:8,\n                 from /workspaces/Linux-Driver-Code-Grader/Tests/2_claude.c:7:\n./include/linux/device/class.h:228:54: note: expected \u2018const char *\u2019 but argument is of type \u2018struct module *\u2019\n  228 | struct class * __must_check class_create(const char *name);\n      |                                          ~~~~~~~~~~~~^~~~\n/workspaces/Linux-Driver-Code-Grader/Tests/2_claude.c:313:20: error: too many arguments to function \u2018class_create\u2019\n  313 |     mychar_class = class_create(THIS_MODULE, CLASS_NAME);\n      |                    ^~~~~~~~~~~~\n./include/linux/device/class.h:228:29: note: declared here\n  228 | struct class * __must_check class_create(const char *name);\n      |                             ^~~~~~~~~~~~\ncc1: some warnings being treated as errors\nmake[3]: *** [scripts/Makefile.build:243: /workspaces/Linux-Driver-Code-Grader/Tests/2_claude.o] Error 1\nmake[2]: *** [/usr/src/linux-headers-6.8.0-1030-azure/Makefile:1925: /workspaces/Linux-Driver-Code-Grader/Tests] Error 2\nmake[1]: *** [Makefile:240: __sub-make] Error 2)"
+            ]
+        },
+        "Security": {
+            "awarded": 21.25,
+            "max": 25.0,
+            "details": [
+                "sub_scores: {'memory_safety': 1.0, 'resource_mgmt': 1.0, 'race_conditions': 1.0, 'input_validation': 0.39999999999999997}",
+                "issues: ['copy_to_user_unchecked', 'copy_from_user_unchecked']"
+            ]
+        },
+        "Code Quality": {
+            "awarded": 16.27,
+            "max": 20.0,
+            "details": [
+                {
+                    "style_score": 0.91,
+                    "documentation_score": 0.5,
+                    "maintainability_score": 0.998
+                }
+            ]
+        },
+        "Performance": {
+            "awarded": 8.85,
+            "max": 10.0,
+            "details": [
+                "complexity_hits 43 -> -1.1"
+            ]
+        },
+        "Advanced": {
+            "awarded": 0.0,
+            "max": 5.0,
+            "details": []
+        }
     }
 }

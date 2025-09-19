@@ -1,34 +1,32 @@
 {
     "compilation": {
         "success": true,
-        "errors": 1,
-        "warnings": 0,
-        "output": "Tests/sample_driver_bad_security.c:4:10: fatal error: linux/uaccess.h: No such file or directory\n    4 | #include <linux/uaccess.h>\n      |          ^~~~~~~~~~~~~~~~~\ncompilation terminated.\n",
-        "note": "Soft pass: missing kernel headers only"
+        "method": "kbuild",
+        "output": "make[1]: Entering directory '/usr/src/linux-headers-6.8.0-1030-azure'\n  CC [M]  /tmp/evaluator_kbuild_tlgr1_8r/sample_driver_bad_security.o\n  MODPOST /tmp/evaluator_kbuild_tlgr1_8r/Module.symvers\n  CC [M]  /tmp/evaluator_kbuild_tlgr1_8r/sample_driver_bad_security.mod.o\n  LD [M]  /tmp/evaluator_kbuild_tlgr1_8r/sample_driver_bad_security.ko\n  BTF [M] /tmp/evaluator_kbuild_tlgr1_8r/sample_driver_bad_security.ko\nmake[1]: Leaving directory '/usr/src/linux-headers-6.8.0-1030-azure'\nwarning: the compiler differs from the one used to build the kernel\n  The kernel was built by: x86_64-linux-gnu-gcc-13 (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0\n  You are using:           gcc-13 (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0\n/tmp/evaluator_kbuild_tlgr1_8r/sample_driver_bad_security.c: In function \u2018device_write\u2019:\n/tmp/evaluator_kbuild_tlgr1_8r/sample_driver_bad_security.c:32:5: warning: ignoring return value of \u2018copy_from_user\u2019 declared with attribute \u2018warn_unused_result\u2019 [-Wunused-result]\n   32 |     copy_from_user(msg, buff, len);\n      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\nSkipping BTF generation for /tmp/evaluator_kbuild_tlgr1_8r/sample_driver_bad_security.ko due to unavailability of vmlinux\n",
+        "errors": 0,
+        "warnings": 2,
+        "built_module": "sample_driver_bad_security.ko"
     },
     "structure": {
         "module_init": true,
         "module_exit": true,
         "function_count": 6,
-        "score": 1.0
+        "avg_func_len": 1.0,
+        "driver_type": "char",
+        "functionality_score": 1.0,
+        "fops_present": [
+            "open",
+            "release",
+            "read",
+            "write"
+        ]
     },
     "style": {
-        "checks": {
-            "includes": 0.6666666666666666,
-            "metadata": 1.0,
-            "core_functions": 1.0,
-            "device_operations": 1.0,
-            "error_handling": 0.0
-        },
-        "score": 0.8333333333333333,
-        "function_count": 0,
-        "details": {
-            "includes_found": 2,
-            "metadata_found": 3.0,
-            "core_functions_found": 2.0,
-            "device_ops_found": 4,
-            "error_handling_indicators": 0.0
-        }
+        "violations": 2,
+        "style_score": 0.98,
+        "documentation_score": 0.5,
+        "maintainability_score": 0.998,
+        "output": "#include <linux/module.h>\n#include <linux/kernel.h>\n#include <linux/fs.h>\n#include <linux/uaccess.h>\n#include <linux/slab.h>\n#include <linux/mutex.h>\n\n#define DEVICE_NAME \"badsec\"\n#define BUF_LEN 128\n\nstatic char *msg;\nstatic int major;\nstatic struct mutex my_lock;\n\nstatic int device_open(struct inode *inode, struct file *file)\n{\n    mutex_lock(&my_lock); // \u274c never unlocked\n    printk(KERN_INFO \"BadSec driver: opened\\n\");\n    return 0;\n}\n\nstatic ssize_t device_read(struct file *filp, char *buffer, size_t length, loff_t *offset)\n{\n    // \u274c strcpy (unsafe)\n    strcpy(buffer, msg);\n    return strlen(msg);\n}\n\nstatic ssize_t device_write(struct file *filp, const char *buff, size_t len, loff_t *off)\n{\n    // \u274c unchecked copy_from_user\n    copy_from_user(msg, buff, len);\n    return len;\n}\n\nstatic int device_release(struct inode *inode, struct file *file)\n{\n    printk(KERN_INFO \"BadSec driver: closed\\n\");\n    return 0;\n}\n\nstatic struct file_operations fops = {\n    .read = device_read,\n    .write = device_write,\n    .open = device_open,\n    .release = device_release\n};\n\nstatic int __init badsec_init(void)\n{\n    major = register_chrdev(0, DEVICE_NAME, &fops);\n    msg = kmalloc(BUF_LEN, GFP_KERNEL); // \u274c never freed\n    printk(KERN_INFO \"BadSec driver loaded\\n\");\n    return 0;\n}\n\nstatic void __exit badsec_exit(void)\n{\n    unregister_chrdev(major, DEVICE_NAME);\n    printk(KERN_INFO \"BadSec driver unloaded\\n\");\n}\n\nmodule_init(badsec_init);\nmodule_exit(badsec_exit);\n\nMODULE_LICENSE(\"GPL\");\nMODULE_DESCRIPTION(\"Bad Security Driver Example\");\nMODULE_AUTHOR(\"Evaluator\");\n"
     },
     "security": {
         "issues": [
@@ -44,12 +42,66 @@
         },
         "score": 0.75
     },
-    "overall_score": 80.42,
+    "meta_file": "Tests/sample_driver_bad_security.c",
+    "performance": {
+        "score": 1.0,
+        "details": []
+    },
+    "runtime": {
+        "compiled": true,
+        "loaded": true,
+        "unloaded": true,
+        "dmesg_success": false,
+        "runtime_notes": "",
+        "dynamic": {
+            "device_found": false,
+            "io_success": false,
+            "concurrency_success": false,
+            "stress_success": false,
+            "notes": [
+                "No device node found under /dev/ or /proc/devices"
+            ]
+        }
+    },
+    "overall_score": 85.58,
     "breakdown": {
-        "Correctness": 40.0,
-        "Security": 18.75,
-        "Code Quality": 16.666666666666664,
-        "Performance": 5,
-        "Advanced": 0
+        "Correctness": {
+            "awarded": 40.0,
+            "max": 40.0,
+            "details": [
+                "Compilation: success (method=kbuild)",
+                "Functionality score: 1.00 -> 10.00/10",
+                "Runtime score: 8.0/10 (compiled OK (+2), loaded OK (+4), unloaded OK (+2))"
+            ]
+        },
+        "Security": {
+            "awarded": 18.75,
+            "max": 25.0,
+            "details": [
+                "sub_scores: {'memory_safety': 0.7, 'resource_mgmt': 0.7, 'race_conditions': 0.6, 'input_validation': 1.0}",
+                "issues: ['unsafe_function:strcpy', 'possible_memory_leak', 'mutex_not_unlocked']"
+            ]
+        },
+        "Code Quality": {
+            "awarded": 16.83,
+            "max": 20.0,
+            "details": [
+                {
+                    "style_score": 0.98,
+                    "documentation_score": 0.5,
+                    "maintainability_score": 0.998
+                }
+            ]
+        },
+        "Performance": {
+            "awarded": 10.0,
+            "max": 10.0,
+            "details": []
+        },
+        "Advanced": {
+            "awarded": 0.0,
+            "max": 5.0,
+            "details": []
+        }
     }
 }
