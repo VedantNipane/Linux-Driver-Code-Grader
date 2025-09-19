@@ -57,6 +57,43 @@ def _print_style(results):
     print(f"Maintainability Score: {style.get('maintainability_score', 0.0):.2f}")
 
 
+def _print_dynamic(results):
+    runtime = results.get("runtime", {})
+    dynamic = runtime.get("dynamic")
+    if not dynamic:
+        return
+
+    print("\n--- Dynamic Runtime Tests ---")
+    if dynamic.get("skipped"):
+        print("Dynamic tests skipped:", dynamic["skipped"])
+        return
+
+    print(f"Device: {dynamic.get('device')}")
+    smoke = dynamic.get("smoke", {})
+    print(f"Smoke test: passed={smoke.get('passed')} error={smoke.get('error')}")
+
+    conc = dynamic.get("concurrency", {})
+    if conc:
+        print(f"Concurrency: success={conc.get('success')} fail={conc.get('fail')}")
+        if conc.get("errors"):
+            print(f"  sample errors: {conc['errors'][:3]}")
+
+    perf = dynamic.get("perf", {})
+    if perf:
+        print(f"Performance: written={perf.get('written')} bytes "
+              f"in {perf.get('elapsed')}s => {perf.get('MBps')} MB/s")
+
+    sysfs = dynamic.get("sysfs", {})
+    if sysfs:
+        print(f"Sysfs: exists={sysfs.get('exists')} found={sysfs.get('found')}")
+
+    ioctl = dynamic.get("ioctl")
+    if ioctl:
+        print("IOCTL results:")
+        for code, outcome in ioctl.items():
+            print(f"  code {code}: {outcome}")
+
+
 def generate_report(results, file_path):
     """
     Expects results to contain:
@@ -65,7 +102,7 @@ def generate_report(results, file_path):
       - compilation
       - security (with sub_scores and issues)
       - style (with violations etc.)
-      - runtime (optional: compiled/loaded/unloaded/dmesg_success)
+      - runtime (with compiled/loaded/unloaded/dmesg_success, dynamic tests optional)
     """
     base_name = os.path.basename(file_path).replace(".c", "")
     report_path = os.path.join("outputs", f"{base_name}_results.json")
@@ -89,6 +126,9 @@ def generate_report(results, file_path):
 
     # Style section
     _print_style(results)
+
+    # Dynamic runtime summary
+    _print_dynamic(results)
 
     print(f"\nOverall Score: {results.get('overall_score', 0.0):.1f}/100")
     print(f"Report saved to: {report_path}")
